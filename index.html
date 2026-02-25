@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SMC マニホールド 選定ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',sans-serif;background:#e8ecf0;color:#1a2232;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* TOP BAR */
+.topbar{height:50px;background:#1e2940;display:flex;align-items:center;padding:0 18px;gap:0;flex-shrink:0;border-bottom:2px solid #e84040;}
+.tb-logo{font-weight:800;font-size:16px;color:#e84040;letter-spacing:-0.5px;padding:3px 10px;border:2px solid #e84040;border-radius:3px;margin-right:14px;font-family:'IBM Plex Mono',monospace;}
+.tb-title{font-size:13px;font-weight:600;color:#fff;padding-right:16px;border-right:1px solid #3a4d65;}
+.series-tabs{display:flex;margin-left:14px;}
+.series-tab{padding:0 14px;height:50px;display:flex;align-items:center;font-size:12px;font-weight:600;color:#7a90a8;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;}
+.series-tab:hover{color:#fff;}
+.series-tab.active{color:#5ab4ff;border-bottom-color:#5ab4ff;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.orient-toggle{display:flex;border:1px solid #3a4d65;border-radius:5px;overflow:hidden;}
+.orient-btn{padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:#7a90a8;border:none;transition:all .15s;font-family:'IBM Plex Mono',monospace;}
+.orient-btn:hover{color:#fff;}
+.orient-btn.active{background:#2d5a8a;color:#fff;}
+.btn-spec{padding:7px 18px;background:#e84040;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;font-family:'Noto Sans JP',sans-serif;}
+.btn-spec:hover{background:#c42020;}
+
+/* LAYOUT */
+.workspace{flex:1;display:flex;overflow:hidden;}
+
+/* LEFT */
+.left-panel{width:220px;background:#fff;border-right:1px solid #dde4ee;overflow-y:auto;flex-shrink:0;}
+.lp-sec{padding:12px 14px;border-bottom:1px solid #f0f4f8;}
+.lp-head{padding:10px 14px 8px;border-bottom:2px solid #2d7bd4;background:linear-gradient(135deg,#1e3a8a,#2d7bd4);display:flex;align-items:center;gap:8px;}
+.lp-head-title{font-size:12px;font-weight:700;color:#fff;flex:1;}
+.mani-series-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+.mani-series-chip{font-size:10px;padding:4px 8px;border:1.5px solid #d0d7e2;border-radius:5px;background:#fff;cursor:pointer;transition:all .12s;color:#1a2232;}
+.mani-series-chip:hover{border-color:#2d7bd4;background:#f0f6ff;}
+.mani-series-chip.active{border-color:#2d7bd4;background:#ebf3ff;color:#0044aa;font-weight:700;}
+.lp-ttl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+.lp-lbl{font-size:10px;color:#64748b;margin-bottom:3px;display:block;font-weight:500;}
+.lp-inp,.lp-sel{width:100%;border:1px solid #d0d7e2;border-radius:4px;padding:5px 8px;font-size:11px;color:#1a2232;outline:none;font-family:'Noto Sans JP',sans-serif;background:#fff;}
+.lp-inp:focus,.lp-sel:focus{border-color:#2d7bd4;}
+.lp-field{margin-bottom:8px;}
+.lp-row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.vbtn{padding:5px 4px;border:1px solid #d0d7e2;border-radius:4px;font-size:10px;font-weight:700;color:#64748b;cursor:pointer;background:#fff;text-align:center;transition:all .15s;font-family:'IBM Plex Mono',monospace;}
+.vbtn:hover{border-color:#2d7bd4;color:#2d7bd4;}
+.vbtn.active{background:#2d7bd4;border-color:#2d7bd4;color:#fff;}
+.st-ctrl{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.st-cb{width:26px;height:26px;border:1px solid #d0d7e2;border-radius:4px;background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1a2232;font-weight:700;transition:all .15s;line-height:1;}
+.st-cb:hover{background:#2d7bd4;color:#fff;border-color:#2d7bd4;}
+.st-num{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#2d7bd4;min-width:28px;text-align:center;}
+.model-box{background:#f0f6ff;border:1px solid #bad4f0;border-radius:5px;padding:8px 10px;margin-top:6px;}
+.model-val{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#0044aa;word-break:break-all;line-height:1.6;}
+.model-hint{font-size:9px;color:#94a3b8;margin-top:3px;line-height:1.5;}
+
+/* CENTER */
+.center-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.canvas-bar{height:36px;background:#fff;border-bottom:1px solid #dde4ee;display:flex;align-items:center;padding:0 14px;gap:14px;flex-shrink:0;}
+.cb-lbl{font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:.1em;text-transform:uppercase;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;}
+.ld{width:8px;height:8px;border-radius:1px;}
+.cb-right{margin-left:auto;display:flex;gap:6px;}
+.btn-sm2{padding:3px 9px;border:1px solid #d0d7e2;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:#fff;color:#64748b;transition:all .15s;}
+.btn-sm2:hover{border-color:#2d7bd4;color:#2d7bd4;}
+.manifold-scroll{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:30px;}
+
+/* SVG click areas */
+.station-click{cursor:pointer;}
+.station-click:hover .st-body-rect{filter:brightness(1.06);}
+
+/* RIGHT PANEL */
+.right-panel{width:264px;background:#fff;border-left:1px solid #dde4ee;overflow-y:auto;flex-shrink:0;transform:translateX(100%);transition:transform .2s;position:relative;}
+.right-panel.open{transform:translateX(0);}
+.rp-head{padding:12px 14px;border-bottom:1px solid #f0f4f8;background:#f8fafc;display:flex;align-items:center;gap:8px;}
+.rp-badge{background:#2d7bd4;color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.rp-title{font-size:12px;font-weight:700;flex:1;}
+.rp-x{width:22px;height:22px;border:none;background:none;font-size:16px;cursor:pointer;color:#94a3b8;border-radius:3px;display:flex;align-items:center;justify-content:center;}
+.rp-x:hover{background:#f0f4f8;}
+.rp-sec{padding:12px 14px;border-bottom:1px solid #f0f4f8;}
+.rp-sec-ttl{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+.rp-lbl{font-size:10px;color:#64748b;margin-bottom:3px;display:block;font-weight:500;}
+.rp-inp,.rp-sel{width:100%;border:1px solid #d0d7e2;border-radius:4px;padding:6px 8px;font-size:11px;color:#1a2232;outline:none;font-family:'Noto Sans JP',sans-serif;background:#fff;}
+.rp-inp:focus,.rp-sel:focus{border-color:#2d7bd4;}
+.rp-field{margin-bottom:9px;}
+.vtcards{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.vtcard{border:1.5px solid #d0d7e2;border-radius:5px;padding:7px 5px;cursor:pointer;text-align:center;transition:all .15s;background:#fff;}
+.vtcard:hover{border-color:#2d7bd4;}
+.vtcard.active{border-color:#2d7bd4;background:#f0f6ff;}
+.vtcard-ic{font-size:16px;margin-bottom:2px;line-height:1;}
+.vtcard-nm{font-size:9px;font-weight:700;color:#1a2232;line-height:1.2;}
+.vtcard-sb{font-size:8px;color:#94a3b8;margin-top:1px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.rp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;}
+.rp-chip{font-size:10px;padding:4px 8px;border:1.5px solid #d0d7e2;border-radius:5px;background:#fff;
+  cursor:pointer;transition:all .12s;color:#1a2232;line-height:1.4;text-align:left;}
+.rp-chip:hover{border-color:#2d7bd4;background:#f0f6ff;}
+.rp-chip.active{border-color:#2d7bd4;background:#ebf3ff;color:#0044aa;font-weight:700;}
+.rp-chip.disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+.mani-chip{font-size:9px;padding:3px 7px;border:1.5px solid #d0d7e2;border-radius:4px;background:#fff;
+  cursor:pointer;transition:all .12s;color:#1a2232;white-space:nowrap;text-align:center;line-height:1.3;}
+.mani-chip:hover{border-color:#2d7bd4;background:#f0f6ff;}
+.mani-chip.active{border-color:#2d7bd4;background:#ebf3ff;color:#0044aa;font-weight:700;}
+.swatches{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.sw{width:20px;height:20px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:all .12s;}
+.sw.active{border-color:#1a2232;transform:scale(1.2);}
+
+/* SPEC MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.modal{background:#fff;border-radius:8px;width:860px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 70px rgba(0,0,0,.3);}
+.modal-bar{padding:14px 22px;border-bottom:1px solid #e0e4ec;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#fff;z-index:10;}
+.modal-title{font-size:14px;font-weight:700;flex:1;}
+.btn-p{padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:'Noto Sans JP',sans-serif;}
+.btn-p-print{background:#2d7bd4;color:#fff;}
+.btn-p-print:hover{background:#1a5aaa;}
+.btn-p-close{background:#f0f4f8;color:#64748b;}
+.btn-p-close:hover{background:#e0e8f0;}
+
+/* SPEC SHEET */
+.ss{padding:28px 36px;font-family:'Noto Sans JP',sans-serif;}
+.ss-hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1a2232;padding-bottom:14px;margin-bottom:18px;}
+.ss-logo{font-size:24px;font-weight:900;color:#e84040;font-family:'IBM Plex Mono',monospace;}
+.ss-meta{text-align:right;font-size:10px;color:#666;line-height:2;}
+.ss-docno{font-size:12px;font-weight:700;color:#1a2232;font-family:'IBM Plex Mono',monospace;}
+.ss-titlebar{background:linear-gradient(135deg,#1a2232,#2d4a6a);color:#fff;padding:16px 20px;border-radius:5px;margin-bottom:18px;}
+.ss-tbl-wrap{border:1px solid #d0d7e2;border-radius:4px;overflow:hidden;margin-bottom:14px;}
+.ss-sec-hd{background:#e8eef6;padding:6px 12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #d0d7e2;color:#1a2232;}
+.ss-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.ss-tbl td{padding:5px 11px;border-bottom:1px solid #eef0f6;}
+.ss-tbl td:first-child{color:#666;width:40%;font-size:10px;background:#fafbfd;}
+.ss-tbl td:last-child{font-weight:600;}
+.ss-tbl tr:last-child td{border-bottom:none;}
+.ss-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.ss-st-tbl{width:100%;border-collapse:collapse;font-size:10px;}
+.ss-st-tbl th{background:#2d4a6a;color:#c8dff0;padding:6px 9px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.06em;border:1px solid #3a5a7a;}
+.ss-st-tbl td{border:1px solid #d0d7e2;padding:5px 9px;}
+.ss-st-tbl tr:nth-child(even) td{background:#f7f9fc;}
+.bx{display:inline-block;padding:1px 5px;border-radius:2px;font-size:8px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.bx-b{background:#dbeafe;color:#1d4ed8;}
+.bx-g{background:#d1fae5;color:#065f46;}
+.bx-o{background:#ffedd5;color:#c2410c;}
+.bx-gr{background:#f1f5f9;color:#475569;}
+.ss-sign{display:flex;gap:10px;margin-top:18px;padding-top:14px;border-top:2px solid #1a2232;}
+.sign-cell{border:1px solid #ccc;min-width:76px;text-align:center;}
+.sign-cell-lbl{font-size:9px;font-weight:700;background:#e8eef6;padding:3px 10px;border-bottom:1px solid #ccc;}
+.sign-cell-sp{height:30px;}
+
+@media print{
+  .topbar,.workspace>*:not(.center-area),.canvas-bar,.overlay .modal-bar{display:none!important;}
+  .overlay{position:static;background:none;}
+  .modal{box-shadow:none;border-radius:0;width:100%;max-height:none;}
+  body,.workspace,.center-area{overflow:visible;height:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-logo">SMC</div>
+  <div class="tb-title">マニホールド選定ツール</div>
+  <div class="series-tabs" id="seriesTabs" style="display:none">
+    <div class="series-tab active" data-sg="SY">SYシリーズ</div>
+    <div class="series-tab" data-sg="VQC">VQCシリーズ</div>
+    <div class="series-tab" data-sg="JSY">JSYシリーズ</div>
+  </div>
+  <div class="tb-right">
+    <div class="orient-toggle">
+      <button class="orient-btn active" id="btnH" onclick="setOrient('h')">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect y="3" width="13" height="7" rx="1" opacity=".25"/><rect x="1" y="2" width="2.5" height="9" rx="1"/><rect x="5.25" y="2" width="2.5" height="9" rx="1"/><rect x="9.5" y="2" width="2.5" height="9" rx="1"/></svg>
+        横
+      </button>
+      <button class="orient-btn" id="btnV" onclick="setOrient('v')">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="3" width="7" height="13" rx="1" opacity=".25"/><rect x="2" y="1" width="9" height="2.5" rx="1"/><rect x="2" y="5.25" width="9" height="2.5" rx="1"/><rect x="2" y="9.5" width="9" height="2.5" rx="1"/></svg>
+        縦
+      </button>
+    </div>
+    <button class="btn-spec" onclick="showSpec()">📄 仕様書を生成</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- LEFT -->
+  <div class="left-panel">
+    <!-- ヘッダー -->
+    <div class="lp-head">
+      <div class="lp-head-title">📋 マニホールド設定</div>
+    </div>
+
+    <!-- マニホールドシリーズ選択 -->
+    <div class="lp-sec" id="maniSeriesSec" style="background:#f0f6ff;border-bottom:2px solid #2d7bd4;">
+      <div class="lp-ttl" style="color:#1e3a8a">マニホールドシリーズ <span style="font-size:8px;color:#64748b;font-weight:400">（品番のシリーズ番号に反映）</span></div>
+      <div class="mani-series-chips">
+        <button class="mani-series-chip" data-ms="SY3000" onclick="setManiSeries('SY3000')">SY3000</button>
+        <button class="mani-series-chip active" data-ms="SY5000" onclick="setManiSeries('SY5000')">SY5000</button>
+        <button class="mani-series-chip" data-ms="SY7000" onclick="setManiSeries('SY7000')">SY7000</button>
+        <button class="mani-series-chip" data-ms="SY9000" onclick="setManiSeries('SY9000')">SY9000</button>
+      </div>
+      <div style="margin-top:5px;font-size:8px;color:#4a6080">
+        ※マニホールドシリーズを選ぶと右パネルの「①シリーズ」も自動で合わせます
+      </div>
+    </div>
+
+    <div class="lp-sec" style="display:none">
+      <div class="lp-ttl">バルブシリーズ</div>
+      <div class="vgrid" id="varGrid"></div>
+    </div>
+
+    <!-- SY専用：配管方式 + マニホールドバリエーション -->
+    <!-- マニホールド品番ボックス（配管方式セクションの上部） -->
+    <div class="lp-sec" id="maniPnSection" style="display:none;background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+      <div style="font-size:8px;font-weight:700;letter-spacing:.15em;color:#94a3b8;font-family:'IBM Plex Mono',monospace;margin-bottom:5px">マニホールド品番</div>
+      <div id="maniPnRow" style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:11px;min-height:20px;"></div>
+      <div style="margin-top:5px;display:flex;gap:8px;font-size:9px;color:#94a3b8;align-items:center">
+        <span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:14px;border:1.5px dashed #f97316;border-radius:2px;background:#fff8f1"></span> 未選択</span>
+        <span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #93c5fd;border-radius:2px;background:#f0f9ff;text-align:center;line-height:14px;font-size:8px;color:#3b82f6">―</span> 無記号</span>
+      </div>
+    </div>
+
+    <div class="lp-sec" id="syPipingSection" style="display:none">
+      <div class="lp-ttl">配管方式</div>
+      <div style="display:flex;gap:4px;margin-bottom:10px">
+        <button id="pipBtn_direct" class="vbtn active" style="flex:1;padding:7px 4px;font-size:10px;line-height:1.3" onclick="setPipingType('direct')">直接配管形</button>
+        <button id="pipBtn_base"   class="vbtn"        style="flex:1;padding:7px 4px;font-size:10px;line-height:1.3" onclick="setPipingType('base')">ベース配管形</button>
+      </div>
+      <div class="lp-ttl" style="margin-top:2px">マニホールドバリエーション</div>
+      <div id="maniVarList" style="display:flex;flex-direction:column;gap:3px;max-height:280px;overflow-y:auto;padding-right:2px"></div>
+
+      <!-- マニホールド品番オプション -->
+      <div style="margin-top:10px;border-top:1px solid #e8edf3;padding-top:10px">
+        <!-- A,Bポート管接続口径（ベース配管形のみ表示） -->
+        <div id="maniPortSec" style="display:none;margin-bottom:8px">
+          <div class="lp-ttl">A,Bポート管接続口径 <span style="font-size:8px;color:#64748b;font-weight:400">（ベース配管形）</span></div>
+          <div id="maniPortChips" style="display:flex;flex-wrap:wrap;gap:3px;"></div>
+        </div>
+        <div class="lp-ttl">P,Rポートねじの種類</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">
+          <button class="mani-chip active" data-mkey="maniThread" data-mval="" onclick="setManiChip(this)">Rc (無記号)</button>
+          <button class="mani-chip"        data-mkey="maniThread" data-mval="00F" onclick="setManiChip(this)">00F：G</button>
+          <button class="mani-chip"        data-mkey="maniThread" data-mval="00N" onclick="setManiChip(this)">00N：NPT</button>
+          <button class="mani-chip"        data-mkey="maniThread" data-mval="00T" onclick="setManiChip(this)">00T：NPTF</button>
+        </div>
+        <div class="lp-ttl">CE/UKCA対応</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">
+          <button class="mani-chip active" data-mkey="maniCeukca" data-mval="" onclick="setManiChip(this)">なし (無記号)</button>
+          <button class="mani-chip"        data-mkey="maniCeukca" data-mval="Q"  onclick="setManiChip(this)">Q：CE/UKCA対応</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-sec">
+      <div class="lp-ttl">電気仕様</div>
+      <div class="lp-field"><label class="lp-lbl">電源電圧</label>
+        <select class="lp-sel" id="cfgV" onchange="updateAll()">
+          <option>DC24V</option><option>DC12V</option><option>AC100V</option><option>AC200V</option>
+        </select>
+      </div>
+      <div class="lp-field"><label class="lp-lbl">配線方式</label>
+        <select class="lp-sel" id="cfgW" onchange="updateAll()">
+          <option>個別配線（リード線）</option>
+          <option>フラットケーブル（MIL 26極）</option>
+          <option>EX510 ゲートウェイ方式</option>
+          <option>DINレール／個別配線</option>
+          <option>DINレール／コネクタボックス</option>
+          <option>DINレール／プラグインタイプ</option>
+          <option>DINレール／EX510ゲートウェイ</option>
+          <option>カセットタイプ（ベースレス）</option>
+        </select>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-ttl">配管仕様</div>
+      <div class="lp-row2">
+        <div class="lp-field"><label class="lp-lbl">使用圧力</label><input class="lp-inp" id="cfgPr" value="0.5 MPa"></div>
+        <div class="lp-field"><label class="lp-lbl">保護等級</label>
+          <select class="lp-sel" id="cfgIP"><option>IP40</option><option>IP65</option><option>IP67</option></select>
+        </div>
+      </div>
+      <div class="lp-field"><label class="lp-lbl">取付方式</label>
+        <select class="lp-sel" id="cfgMt">
+          <option>ボトムポート（底面配管）</option>
+          <option>サイドポート（側面配管）</option>
+          <option>サブプレート</option>
+          <option>DINレール取付</option>
+        </select>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-ttl">ステーション数</div>
+      <div class="st-ctrl">
+        <button class="st-cb" onclick="stDelta(-1)">−</button>
+        <div class="st-num" id="stNum">6</div>
+        <button class="st-cb" onclick="stDelta(1)">＋</button>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-ttl">ドキュメント</div>
+      <div class="lp-field"><label class="lp-lbl">プロジェクト名</label><input class="lp-inp" id="cfgPJ" placeholder="例: 搬送ライン A工程"></div>
+      <div class="lp-row2">
+        <div class="lp-field"><label class="lp-lbl">文書番号</label><input class="lp-inp" id="cfgDN" placeholder="MEC-001"></div>
+        <div class="lp-field"><label class="lp-lbl">作成者</label><input class="lp-inp" id="cfgAU"></div>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-ttl">型番（参考）</div>
+      <div class="model-box">
+        <div class="model-val" id="modelPrev">—</div>
+        <div class="model-hint" id="modelHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center-area">
+    <div class="canvas-bar">
+      <div class="cb-lbl">マニホールド構成図</div>
+      <div class="legend-item"><div class="ld" style="background:#2563eb"></div>5P-2S</div>
+      <div class="legend-item"><div class="ld" style="background:#1e3a8a"></div>5P-2D</div>
+      <div class="legend-item"><div class="ld" style="background:#7c3aed"></div>3位置-CLS</div>
+      <div class="legend-item"><div class="ld" style="background:#0891b2"></div>3位置-EXH</div>
+      <div class="legend-item"><div class="ld" style="background:#059669"></div>3位置-PRS</div>
+      <div class="legend-item"><div class="ld" style="background:#8a9ab0"></div>BLK</div>
+      <div class="cb-right">
+        <button class="btn-sm2" onclick="resetAll()">リセット</button>
+      </div>
+    </div>
+    <div class="manifold-scroll" id="manifoldScroll">
+      <div id="manifoldWrap"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel" id="rightPanel">
+    <div class="rp-head">
+      <div class="rp-badge" id="rpBadge">ST1</div>
+      <div class="rp-title">バルブ設定</div>
+      <button class="rp-x" onclick="closeRP()">✕</button>
+    </div>
+
+    <!-- ===== 品番ビルダー ===== -->
+    <div id="rpPnBuilder" style="background:#f8fafc;border-bottom:2px solid #e2e8f0;padding:10px 14px 12px;">
+      <div style="font-size:8px;font-weight:700;letter-spacing:.15em;color:#94a3b8;font-family:'IBM Plex Mono',monospace;margin-bottom:6px">バルブ品番</div>
+      <div id="rpPnRow" style="display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:11px;"></div>
+      <div style="margin-top:6px;display:flex;gap:8px;font-size:9px;color:#94a3b8;align-items:center">
+        <span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:14px;border:1.5px dashed #f97316;border-radius:2px;background:#fff8f1"></span> 未選択</span>
+        <span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #2d7bd4;border-radius:2px;background:#ebf3ff;text-align:center;line-height:14px;font-size:8px;color:#0044aa">―</span> 無記号</span>
+        <span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:14px;border:1.5px solid #2d7bd4;border-radius:2px;background:#ebf3ff;text-align:center;line-height:14px;font-size:8px;color:#0044aa">5</span> 選択済</span>
+      </div>
+    </div>
+
+    <div class="rp-sec">
+      <div class="rp-sec-ttl">バルブ種類</div>
+      <div class="vtcards" style="grid-template-columns:1fr 1fr">
+
+        <!-- ===== 5ポート 2位置 ===== -->
+        <div style="grid-column:span 2;font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.1em;padding:4px 2px 0;font-family:'IBM Plex Mono',monospace">5ポート ／ 2位置</div>
+
+        <div class="vtcard active" data-vt="5p-s" onclick="setVtype(this)">
+          <svg viewBox="0 0 54 22" width="54" height="22" style="display:block;margin:0 auto 2px">
+            <!-- 2位置弁ボックス -->
+            <rect x="4" y="3" width="30" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <!-- 左位置（通常位置）: P→A, B→EXH -->
+            <line x1="7"  y1="3"  x2="7"  y2="19" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+            <line x1="22" y1="3"  x2="22" y2="19" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+            <!-- 右位置（励磁時）: P→B, A→EXH - 太線で強調 -->
+            <line x1="14" y1="6" x2="20" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="26" y1="6" x2="20" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="26" y1="16" x2="32" y2="6" stroke="currentColor" stroke-width="1.3"/>
+            <!-- ソレノイド（右側） -->
+            <rect x="34" y="6" width="10" height="10" fill="#2563eb" rx="1.5"/>
+            <line x1="36" y1="9"  x2="42" y2="9"  stroke="white" stroke-width="0.8"/>
+            <line x1="36" y1="11" x2="42" y2="11" stroke="white" stroke-width="0.8"/>
+            <line x1="36" y1="13" x2="42" y2="13" stroke="white" stroke-width="0.8"/>
+            <line x1="44" y1="11" x2="50" y2="11" stroke="currentColor" stroke-width="1.2"/>
+            <!-- スプリング（左側） -->
+            <path d="M4,11 L2,9 L0,11 L2,13 L4,11" fill="none" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="vtcard-nm">2位置 シングル</div>
+          <div class="vtcard-sb" style="color:#2563eb">SOL × 1　スプリングリターン</div>
+        </div>
+
+        <div class="vtcard" data-vt="5p-d" onclick="setVtype(this)">
+          <svg viewBox="0 0 54 22" width="54" height="22" style="display:block;margin:0 auto 2px">
+            <rect x="4" y="3" width="30" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <line x1="22" y1="3" x2="22" y2="19" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+            <line x1="14" y1="6" x2="20" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="26" y1="6" x2="20" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="26" y1="16" x2="32" y2="6" stroke="currentColor" stroke-width="1.3"/>
+            <!-- 右ソレノイド -->
+            <rect x="34" y="6" width="10" height="10" fill="#1e3a8a" rx="1.5"/>
+            <line x1="36" y1="9"  x2="42" y2="9"  stroke="white" stroke-width="0.8"/>
+            <line x1="36" y1="11" x2="42" y2="11" stroke="white" stroke-width="0.8"/>
+            <line x1="36" y1="13" x2="42" y2="13" stroke="white" stroke-width="0.8"/>
+            <line x1="44" y1="11" x2="50" y2="11" stroke="currentColor" stroke-width="1.2"/>
+            <!-- 左ソレノイド -->
+            <rect x="10" y="6" width="10" height="10" fill="#1e3a8a" rx="1.5" transform="rotate(180,15,11)"/>
+            <line x1="12" y1="9"  x2="18" y2="9"  stroke="white" stroke-width="0.8"/>
+            <line x1="12" y1="11" x2="18" y2="11" stroke="white" stroke-width="0.8"/>
+            <line x1="12" y1="13" x2="18" y2="13" stroke="white" stroke-width="0.8"/>
+            <rect x="0"  y="6" width="10" height="10" fill="#1e3a8a" rx="1.5"/>
+            <line x1="2" y1="9"  x2="8"  y2="9"  stroke="white" stroke-width="0.8"/>
+            <line x1="2" y1="11" x2="8"  y2="11" stroke="white" stroke-width="0.8"/>
+            <line x1="2" y1="13" x2="8"  y2="13" stroke="white" stroke-width="0.8"/>
+          </svg>
+          <div class="vtcard-nm">2位置 ダブル</div>
+          <div class="vtcard-sb" style="color:#1e3a8a">SOL × 2　デテント</div>
+        </div>
+
+        <!-- ===== 5ポート 3位置 ===== -->
+        <div style="grid-column:span 2;font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.1em;padding:6px 2px 0;font-family:'IBM Plex Mono',monospace">5ポート ／ 3位置</div>
+
+        <div class="vtcard" data-vt="5p-3c" onclick="setVtype(this)">
+          <svg viewBox="0 0 60 22" width="60" height="22" style="display:block;margin:0 auto 2px">
+            <!-- 3ボックス -->
+            <rect x="0"  y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="16" y="3" width="16" height="16" fill="#f3f0ff" stroke="#7c3aed" stroke-width="1.5"/>
+            <rect x="32" y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <!-- 中央位置: クローズド（全ポートブロック） -->
+            <rect x="18" y="6"  width="5" height="4" fill="#7c3aed" rx="0.5"/>
+            <rect x="25" y="6"  width="5" height="4" fill="#7c3aed" rx="0.5"/>
+            <rect x="18" y="12" width="5" height="4" fill="#7c3aed" rx="0.5"/>
+            <rect x="25" y="12" width="5" height="4" fill="#7c3aed" rx="0.5"/>
+            <!-- ソレノイド左右 -->
+            <rect x="48" y="7" width="8" height="8" fill="#7c3aed" rx="1"/>
+            <line x1="50" y1="10" x2="54" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="50" y1="12" x2="54" y2="12" stroke="white" stroke-width="0.8"/>
+            <rect x="4"  y="7" width="8" height="8" fill="#7c3aed" rx="1" transform="rotate(180,8,11)"/>
+            <line x1="6" y1="10" x2="10" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="6" y1="12" x2="10" y2="12" stroke="white" stroke-width="0.8"/>
+          </svg>
+          <div class="vtcard-nm">3位置 クローズドセンタ</div>
+          <div class="vtcard-sb" style="color:#7c3aed">全ポートブロック</div>
+        </div>
+
+        <div class="vtcard" data-vt="5p-3e" onclick="setVtype(this)">
+          <svg viewBox="0 0 60 22" width="60" height="22" style="display:block;margin:0 auto 2px">
+            <rect x="0"  y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="16" y="3" width="16" height="16" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+            <rect x="32" y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <!-- 中央位置: エキゾーストセンタ（A・BをEXHに接続） -->
+            <line x1="21" y1="6"  x2="21" y2="16" stroke="#0891b2" stroke-width="1.5"/>
+            <line x1="27" y1="6"  x2="27" y2="16" stroke="#0891b2" stroke-width="1.5"/>
+            <line x1="21" y1="16" x2="27" y2="16" stroke="#0891b2" stroke-width="1.5"/>
+            <!-- P blocked -->
+            <rect x="22.5" y="8" width="3" height="3" fill="#0891b2" rx="0.5"/>
+            <!-- ソレノイド -->
+            <rect x="48" y="7" width="8" height="8" fill="#0891b2" rx="1"/>
+            <line x1="50" y1="10" x2="54" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="50" y1="12" x2="54" y2="12" stroke="white" stroke-width="0.8"/>
+            <rect x="4"  y="7" width="8" height="8" fill="#0891b2" rx="1"/>
+            <line x1="6" y1="10" x2="10" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="6" y1="12" x2="10" y2="12" stroke="white" stroke-width="0.8"/>
+          </svg>
+          <div class="vtcard-nm">3位置 エキゾーストセンタ</div>
+          <div class="vtcard-sb" style="color:#0891b2">A・B → EXH</div>
+        </div>
+
+        <div class="vtcard" data-vt="5p-3p" onclick="setVtype(this)" style="grid-column:span 2">
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center">
+            <svg viewBox="0 0 60 22" width="60" height="22">
+              <rect x="0"  y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <rect x="16" y="3" width="16" height="16" fill="#f0fdf4" stroke="#059669" stroke-width="1.5"/>
+              <rect x="32" y="3" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <!-- 中央位置: プレッシャセンタ（A・BをPに接続） -->
+              <line x1="21" y1="6"  x2="21" y2="16" stroke="#059669" stroke-width="1.5"/>
+              <line x1="27" y1="6"  x2="27" y2="16" stroke="#059669" stroke-width="1.5"/>
+              <line x1="21" y1="11" x2="27" y2="11" stroke="#059669" stroke-width="1.5"/>
+              <!-- EXH blocked -->
+              <rect x="19" y="12" width="3" height="3" fill="#059669" rx="0.5"/>
+              <rect x="26" y="12" width="3" height="3" fill="#059669" rx="0.5"/>
+              <!-- ソレノイド -->
+              <rect x="48" y="7" width="8" height="8" fill="#059669" rx="1"/>
+              <line x1="50" y1="10" x2="54" y2="10" stroke="white" stroke-width="0.8"/>
+              <line x1="50" y1="12" x2="54" y2="12" stroke="white" stroke-width="0.8"/>
+              <rect x="4"  y="7" width="8" height="8" fill="#059669" rx="1"/>
+              <line x1="6" y1="10" x2="10" y2="10" stroke="white" stroke-width="0.8"/>
+              <line x1="6" y1="12" x2="10" y2="12" stroke="white" stroke-width="0.8"/>
+            </svg>
+            <div style="text-align:left">
+              <div class="vtcard-nm">3位置 プレッシャセンタ</div>
+              <div class="vtcard-sb" style="color:#059669">A・B → P（加圧保持）</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 3ポート ===== -->
+        <div id="3portLabel" style="grid-column:span 2;font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.1em;padding:6px 2px 0;font-family:'IBM Plex Mono',monospace">3ポート</div>
+
+        <div class="vtcard" data-vt="3p-n" onclick="setVtype(this)">
+          <svg viewBox="0 0 36 22" width="36" height="22" style="display:block;margin:0 auto 2px">
+            <rect x="2"  y="3" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="16" y="3" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <!-- NC位置（通常): A→EXH接続（左ボックスがアクティブ） -->
+            <rect x="5" y="7" width="4" height="5" fill="#b45309" rx="0.5"/>
+            <line x1="11" y1="6" x2="11" y2="19" stroke="currentColor" stroke-width="1.3"/>
+            <!-- 励磁位置（右ボックス）: P→A接続 -->
+            <line x1="19" y1="6" x2="27" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <!-- ソレノイド -->
+            <rect x="30" y="7" width="6" height="8" fill="#b45309" rx="1"/>
+            <line x1="31" y1="10" x2="35" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="31" y1="12" x2="35" y2="12" stroke="white" stroke-width="0.8"/>
+            <!-- スプリング -->
+            <path d="M2,11 L0,9 L-2,11" fill="none" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="vtcard-nm">3ポート NC</div>
+          <div class="vtcard-sb" style="color:#b45309">常時閉（ノーマルクローズ）</div>
+        </div>
+
+        <div class="vtcard" data-vt="3p-o" onclick="setVtype(this)">
+          <svg viewBox="0 0 36 22" width="36" height="22" style="display:block;margin:0 auto 2px">
+            <rect x="2"  y="3" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="16" y="3" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <!-- NO位置（通常): P→A接続（左ボックスがアクティブ） -->
+            <line x1="5"  y1="6" x2="13" y2="16" stroke="currentColor" stroke-width="1.3"/>
+            <!-- 励磁位置（右ボックス）: A→EXH接続 -->
+            <rect x="19" y="7" width="4" height="5" fill="#9f1239" rx="0.5"/>
+            <line x1="25" y1="6" x2="25" y2="19" stroke="currentColor" stroke-width="1.3"/>
+            <!-- ソレノイド -->
+            <rect x="30" y="7" width="6" height="8" fill="#9f1239" rx="1"/>
+            <line x1="31" y1="10" x2="35" y2="10" stroke="white" stroke-width="0.8"/>
+            <line x1="31" y1="12" x2="35" y2="12" stroke="white" stroke-width="0.8"/>
+            <!-- スプリング -->
+            <path d="M2,11 L0,9" fill="none" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="vtcard-nm">3ポート NO</div>
+          <div class="vtcard-sb" style="color:#9f1239">常時開（ノーマルオープン）</div>
+        </div>
+
+        <!-- ===== ブランク ===== -->
+        <div class="vtcard" data-vt="blank" onclick="setVtype(this)" style="grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 10px">
+          <svg viewBox="0 0 24 22" width="24" height="22">
+            <rect x="2" y="3" width="20" height="16" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2" rx="1"/>
+            <line x1="4" y1="5" x2="20" y2="19" stroke="#94a3b8" stroke-width="1.2"/>
+            <line x1="20" y1="5" x2="4" y2="19" stroke="#94a3b8" stroke-width="1.2"/>
+          </svg>
+          <div><div class="vtcard-nm">ブランクプレート</div><div class="vtcard-sb">未使用スロット</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== 仕様設定（ブランク時は非表示） ===== -->
+    <div id="rpSpecSec">
+
+      <!-- ① シリーズ -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">① シリーズ</div>
+        <div class="rp-chips" id="rpSeriesChips">
+          <button class="rp-chip" data-key="series" data-val="SY3000" onclick="setChip(this)">SY3000</button>
+          <button class="rp-chip" data-key="series" data-val="SY5000" onclick="setChip(this)">SY5000</button>
+          <button class="rp-chip" data-key="series" data-val="SY7000" onclick="setChip(this)">SY7000</button>
+          <button class="rp-chip" data-key="series" data-val="SY9000" onclick="setChip(this)">SY9000</button>
+        </div>
+      </div>
+
+      <!-- ② 切換方式（vtcardと連動・読み取り専用表示） -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">② 切換方式</div>
+        <div id="rpSwitchDisp" style="font-size:11px;color:#1a2232;font-weight:600;padding:4px 0">—</div>
+      </div>
+
+      <!-- ③ コイル仕様 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">③ コイル仕様</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="coil" data-val="" onclick="setChip(this)">標準</button>
+          <button class="rp-chip" data-key="coil" data-val="T" onclick="setChip(this)">節電回路付 (T)<br><span style="font-size:8px;color:#64748b">DC24V/12Vのみ</span></button>
+        </div>
+      </div>
+
+      <!-- ④ 定格電圧 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">④ 定格電圧</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="voltage" data-val="5" onclick="setChip(this)">DC24V (5)</button>
+          <button class="rp-chip" data-key="voltage" data-val="6" onclick="setChip(this)">DC12V (6)</button>
+          <button class="rp-chip" data-key="voltage" data-val="V" onclick="setChip(this)">DC6V (V)</button>
+          <button class="rp-chip" data-key="voltage" data-val="S" onclick="setChip(this)">DC5V (S)</button>
+          <button class="rp-chip" data-key="voltage" data-val="R" onclick="setChip(this)">DC3V (R)</button>
+          <button class="rp-chip" data-key="voltage" data-val="1" onclick="setChip(this)">AC100V (1)</button>
+          <button class="rp-chip" data-key="voltage" data-val="2" onclick="setChip(this)">AC200V (2)</button>
+          <button class="rp-chip" data-key="voltage" data-val="3" onclick="setChip(this)">AC110V (3)</button>
+          <button class="rp-chip" data-key="voltage" data-val="4" onclick="setChip(this)">AC220V (4)</button>
+        </div>
+      </div>
+
+      <!-- ⑤ リード線取出し方法 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑤ リード線取出し方法</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="lead" data-val="G" onclick="setChip(this)">G：グロメット<br><span style="font-size:8px;color:#64748b">リード線300mm</span></button>
+          <button class="rp-chip" data-key="lead" data-val="H" onclick="setChip(this)">H：グロメット<br><span style="font-size:8px;color:#64748b">リード線600mm</span></button>
+          <button class="rp-chip" data-key="lead" data-val="L" onclick="setChip(this)">L：L形コネクタ<br><span style="font-size:8px;color:#64748b">リード線付300mm</span></button>
+          <button class="rp-chip" data-key="lead" data-val="LN" onclick="setChip(this)">LN：L形コネクタ<br><span style="font-size:8px;color:#64748b">リード線なし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="LO" onclick="setChip(this)">LO：L形コネクタ<br><span style="font-size:8px;color:#64748b">コネクタなし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="M" onclick="setChip(this)">M：M形コネクタ<br><span style="font-size:8px;color:#64748b">リード線付300mm</span></button>
+          <button class="rp-chip" data-key="lead" data-val="MN" onclick="setChip(this)">MN：M形コネクタ<br><span style="font-size:8px;color:#64748b">リード線なし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="MO" onclick="setChip(this)">MO：M形コネクタ<br><span style="font-size:8px;color:#64748b">コネクタなし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="D" onclick="setChip(this)">D：DIN形<br><span style="font-size:8px;color:#64748b">コネクタ付</span></button>
+          <button class="rp-chip" data-key="lead" data-val="DO" onclick="setChip(this)">DO：DIN形<br><span style="font-size:8px;color:#64748b">コネクタなし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="Y" onclick="setChip(this)">Y：DIN形(C規格)<br><span style="font-size:8px;color:#64748b">コネクタ付</span></button>
+          <button class="rp-chip" data-key="lead" data-val="YO" onclick="setChip(this)">YO：DIN形(C規格)<br><span style="font-size:8px;color:#64748b">コネクタなし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="WO" onclick="setChip(this)">WO：M8コネクタ<br><span style="font-size:8px;color:#64748b">ケーブルなし</span></button>
+          <button class="rp-chip" data-key="lead" data-val="W" onclick="setChip(this)">W□：M8コネクタ<br><span style="font-size:8px;color:#64748b">ケーブル付</span></button>
+        </div>
+      </div>
+
+      <!-- ⑥ ランプ・サージ電圧保護回路 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑥ ランプ・サージ電圧保護回路</div>
+        <div id="rpSurgeNote" style="font-size:8px;color:#64748b;margin-bottom:6px">G/H/L/M/W系の場合</div>
+        <div class="rp-chips" id="rpSurgeChips">
+          <button class="rp-chip" data-key="surge" data-val="" onclick="setChip(this)">なし</button>
+          <button class="rp-chip" data-key="surge" data-val="S" onclick="setChip(this)">S：サージ電圧保護</button>
+          <button class="rp-chip" data-key="surge" data-val="Z" onclick="setChip(this)">Z：ランプ＋サージ</button>
+          <button class="rp-chip" data-key="surge" data-val="R" onclick="setChip(this)">R：サージ（無極性）</button>
+          <button class="rp-chip" data-key="surge" data-val="U" onclick="setChip(this)">U：ランプ＋サージ（無極性）</button>
+        </div>
+      </div>
+
+      <!-- ⑦ マニュアル -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑦ マニュアル</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="manual" data-val="" onclick="setChip(this)">ノンロックプッシュ式</button>
+          <button class="rp-chip" data-key="manual" data-val="D" onclick="setChip(this)">D：プッシュターンロック<br><span style="font-size:8px;color:#64748b">ドライバ操作形</span></button>
+          <button class="rp-chip" data-key="manual" data-val="E" onclick="setChip(this)">E：プッシュターンロック<br><span style="font-size:8px;color:#64748b">手操作形</span></button>
+        </div>
+      </div>
+
+      <!-- ⑧ A・Bポート管接続口径 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑧ A・Bポート管接続口径</div>
+        <div style="font-size:8px;color:#64748b;margin-bottom:4px">ねじ配管</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="portSize" data-val="M5" onclick="setChip(this)">M5<br><span style="font-size:8px;color:#64748b">SY3000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="01" onclick="setChip(this)">01：Rc1/8<br><span style="font-size:8px;color:#64748b">SY5000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="02" onclick="setChip(this)">02：Rc1/4<br><span style="font-size:8px;color:#64748b">SY7000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="03" onclick="setChip(this)">03：Rc3/8<br><span style="font-size:8px;color:#64748b">SY9000</span></button>
+        </div>
+        <div style="font-size:8px;color:#64748b;margin:6px 0 4px">ワンタッチ継手（ミリ）</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="portSize" data-val="C4" onclick="setChip(this)">C4：ø4<br><span style="font-size:8px;color:#64748b">SY3/5000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="C6" onclick="setChip(this)">C6：ø6<br><span style="font-size:8px;color:#64748b">SY3/5000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="C8" onclick="setChip(this)">C8：ø8<br><span style="font-size:8px;color:#64748b">SY7/9000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="C10" onclick="setChip(this)">C10：ø10<br><span style="font-size:8px;color:#64748b">SY7/9000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="C12" onclick="setChip(this)">C12：ø12<br><span style="font-size:8px;color:#64748b">SY9000</span></button>
+        </div>
+        <div style="font-size:8px;color:#64748b;margin:6px 0 4px">ワンタッチ継手（インチ）</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="portSize" data-val="N3" onclick="setChip(this)">N3：3/32"<br><span style="font-size:8px;color:#64748b">SY3/5000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="N7" onclick="setChip(this)">N7：1/4"<br><span style="font-size:8px;color:#64748b">SY3/5000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="N9" onclick="setChip(this)">N9：5/16"<br><span style="font-size:8px;color:#64748b">SY7/9000</span></button>
+          <button class="rp-chip" data-key="portSize" data-val="N11" onclick="setChip(this)">N11：3/8"<br><span style="font-size:8px;color:#64748b">SY7/9000</span></button>
+        </div>
+      </div>
+
+      <!-- ⑨ ねじの種類 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑨ ねじの種類</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="thread" data-val="" onclick="setChip(this)">Rc（PT）</button>
+          <button class="rp-chip" data-key="thread" data-val="F" onclick="setChip(this)">F：G（PF）</button>
+          <button class="rp-chip" data-key="thread" data-val="N" onclick="setChip(this)">N：NPT</button>
+          <button class="rp-chip" data-key="thread" data-val="T" onclick="setChip(this)">T：NPTF</button>
+        </div>
+      </div>
+
+      <!-- ⑩ ブラケット -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑩ ブラケット <span style="font-size:8px;color:#94a3b8;font-weight:400">※2位置シングル・SY3/5/7000のみ</span></div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="bracket" data-val="" onclick="setChip(this)">なし</button>
+          <button class="rp-chip" data-key="bracket" data-val="F1" onclick="setChip(this)">F1：フートブラケット</button>
+          <button class="rp-chip" data-key="bracket" data-val="F2" onclick="setChip(this)">F2：サイドブラケット</button>
+        </div>
+      </div>
+
+      <!-- ⑪ オーダーメイド仕様 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑪ オーダーメイド仕様</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="custom" data-val="" onclick="setChip(this)">標準</button>
+          <button class="rp-chip" data-key="custom" data-val="X20" onclick="setChip(this)">X20：外部パイロット<br><span style="font-size:8px;color:#64748b">直接配管形のみ</span></button>
+          <button class="rp-chip" data-key="custom" data-val="X90" onclick="setChip(this)">X90：主弁フッ素ゴム</button>
+          <button class="rp-chip" data-key="custom" data-val="X701" onclick="setChip(this)">X701：4位置デュアル3ポート弁<br><span style="font-size:8px;color:#64748b">SY5000/7000のみ</span></button>
+        </div>
+      </div>
+
+      <!-- ⑫ CE/UKCA -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">⑫ CE/UKCA対応</div>
+        <div class="rp-chips">
+          <button class="rp-chip" data-key="ceukca" data-val="" onclick="setChip(this)">なし</button>
+          <button class="rp-chip" data-key="ceukca" data-val="Q" onclick="setChip(this)">Q：CE/UKCA対応品<br><span style="font-size:8px;color:#64748b">AC仕様はDIN形ターミナルのみ</span></button>
+        </div>
+      </div>
+
+      <!-- 識別カラー -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">識別カラー</div>
+        <div class="swatches" id="swatches">
+          <div class="sw active" data-c="" style="background:#e0e4ec" onclick="setSwatch(this,'')"></div>
+          <div class="sw" data-c="#ef4444" style="background:#ef4444" onclick="setSwatch(this,'#ef4444')"></div>
+          <div class="sw" data-c="#f97316" style="background:#f97316" onclick="setSwatch(this,'#f97316')"></div>
+          <div class="sw" data-c="#eab308" style="background:#eab308" onclick="setSwatch(this,'#eab308')"></div>
+          <div class="sw" data-c="#22c55e" style="background:#22c55e" onclick="setSwatch(this,'#22c55e')"></div>
+          <div class="sw" data-c="#2d7bd4" style="background:#2d7bd4" onclick="setSwatch(this,'#2d7bd4')"></div>
+          <div class="sw" data-c="#8b5cf6" style="background:#8b5cf6" onclick="setSwatch(this,'#8b5cf6')"></div>
+          <div class="sw" data-c="#ec4899" style="background:#ec4899" onclick="setSwatch(this,'#ec4899')"></div>
+        </div>
+      </div>
+
+      <!-- タグ・備考 -->
+      <div class="rp-sec">
+        <div class="rp-sec-ttl">タグ / 備考</div>
+        <div class="rp-field"><label class="rp-lbl">タグ名 / 用途</label><input class="rp-inp" id="rpTag" placeholder="例: シリンダA 前進" oninput="setVprop('tag',this.value)"></div>
+        <div class="rp-field"><label class="rp-lbl">備考</label><input class="rp-inp" id="rpNote" placeholder="特記事項" oninput="setVprop('note',this.value)"></div>
+      </div>
+
+    </div><!-- /rpSpecSec -->
+
+    <div class="rp-sec">
+      <button onclick="removeSelected()" style="width:100%;padding:7px;border:1px solid #fca5a5;border-radius:4px;background:#fff;color:#e84040;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#fff'">このステーションを削除</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- SPEC MODAL -->
+<div class="overlay" id="specOverlay">
+  <div class="modal">
+    <div class="modal-bar">
+      <div class="modal-title">📄 SMC マニホールド 仕様書</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-p btn-p-print" onclick="window.print()">🖨 印刷 / PDF</button>
+        <button class="btn-p btn-p-close" onclick="document.getElementById('specOverlay').classList.remove('show')">閉じる</button>
+      </div>
+    </div>
+    <div id="specContent"></div>
+  </div>
+</div>
+
+<script>
+/* ========== SERIES DATA ========== */
+const SDATA = {
+  SY:  { variants:[
+    {id:'SY3000',label:'SY3000',port:'Rc 1/8',pitch:'3.5mm',flow:'260 L/min',cv:'0.6',code:'3'},
+    {id:'SY5000',label:'SY5000',port:'Rc 1/4',pitch:'5.0mm',flow:'520 L/min',cv:'1.2',code:'5'},
+    {id:'SY7000',label:'SY7000',port:'Rc 3/8',pitch:'7.0mm',flow:'900 L/min',cv:'2.0',code:'7'},
+    {id:'SY9000',label:'SY9000',port:'Rc 1/2',pitch:'9.0mm',flow:'1700 L/min',cv:'3.5',code:'9'},
+  ]},
+  VQC: { variants:[
+    {id:'VQC1000',label:'VQC1000',port:'M5',    pitch:'10mm',flow:'100 L/min',cv:'0.2',code:'1'},
+    {id:'VQC2000',label:'VQC2000',port:'Rc 1/4',pitch:'18mm',flow:'500 L/min',cv:'1.0',code:'2'},
+    {id:'VQC4000',label:'VQC4000',port:'Rc 1/2',pitch:'26mm',flow:'1400 L/min',cv:'3.0',code:'4'},
+  ]},
+  JSY: { variants:[
+    {id:'JSY100', label:'JSY100', port:'Rc 1/8',pitch:'10mm',flow:'160 L/min',cv:'0.4',code:'1'},
+    {id:'JSY150', label:'JSY150', port:'Rc 1/4',pitch:'15mm',flow:'320 L/min',cv:'0.7',code:'15'},
+    {id:'JSY300', label:'JSY300', port:'Rc 3/8',pitch:'18mm',flow:'680 L/min',cv:'1.4',code:'3'},
+  ]},
+};
+
+/* ========== SYシリーズ マニホールドバリエーションデータ（カタログ P.726-730参照）========== */
+const SY_MANI_VARS = {
+  direct: [
+    // 直接配管形
+    { id:'20',  label:'20型',   base:'一体ベース',     wiring:'個別配線（リード線）',              sizes:['SY3000','SY5000','SY7000'],           page:'P.766', code:'20',  wiringKey:'個別配線（リード線）',         desc:'バルブ本体に直接配管。異なる継手の組み合せが可能。' },
+    { id:'23',  label:'23型',   base:'分割形ベース',   wiring:'個別配線（リード線）',              sizes:['SY9000'],                             page:'P.772', code:'23',  wiringKey:'個別配線（リード線）',         desc:'マニホールド連数の増減が可能。分割形ベース。SY9000専用。' },
+    { id:'20P', label:'20P型',  base:'一体ベース',     wiring:'フラットケーブル（MIL 26極）',      sizes:['SY3000','SY5000','SY7000'],           page:'P.776', code:'20P', wiringKey:'フラットケーブル（MIL 26極）', desc:'外部からの配線を26極MILタイプコネクタで一括ワンタッチ配線が可能。' },
+    { id:'23P', label:'23P型',  base:'分割形ベース',   wiring:'フラットケーブル（MIL 26極）',      sizes:['SY9000'],                             page:'P.782', code:'23P', wiringKey:'フラットケーブル（MIL 26極）', desc:'マニホールド連数の増減が可能。フラットケーブル対応。分割形ベース。SY9000専用。' },
+    { id:'20SA',label:'20SA型', base:'一体ベース',     wiring:'EX510 ゲートウェイ方式',            sizes:['SY3000','SY5000','SY7000'],           page:'P.786', code:'20SA',wiringKey:'EX510 ゲートウェイ方式',     desc:'シリアル伝送システム（EX510）対応。' },
+    { id:'23SA',label:'23SA型', base:'分割形ベース',   wiring:'EX510 ゲートウェイ方式',            sizes:['SY9000'],                             page:'P.792', code:'23SA',wiringKey:'EX510 ゲートウェイ方式',     desc:'マニホールド連数の増減が可能。EX510シリアル伝送システム対応。分割形ベース。SY9000専用。' },
+    { id:'60',  label:'60型',   base:'カセットタイプ', wiring:'カセットタイプ（ベースレス）',       sizes:['SY3000','SY5000','SY7000'],           page:'P.800', code:'60',  wiringKey:'カセットタイプ（ベースレス）', desc:'マニホールドのベースレス化により、軽量・コンパクト。' },
+  ],
+  base: [
+    // ベース配管形
+    { id:'41',   label:'41型',    base:'一体ベース',          subtype:'コンパクトタイプ',              wiring:'個別配線（リード線）',              sizes:['SY3000','SY5000'],             page:'P.818', code:'41',   wiringKey:'個別配線（リード線）',              desc:'一体ベース／コンパクトタイプ。個別配線。' },
+    { id:'42',   label:'42型',    base:'一体ベース',          subtype:'共通外部パイロット兼用タイプ',  wiring:'個別配線（リード線）',              sizes:['SY3000','SY5000'],             page:'P.818', code:'42',   wiringKey:'個別配線（リード線）',              desc:'ベース側配管でバルブ交換時のメンテナンスが容易。' },
+    { id:'43',   label:'43型',    base:'分割形ベース',        subtype:'',                              wiring:'個別配線（リード線）',              sizes:['SY9000'],                      page:'P.828', code:'43',   wiringKey:'個別配線（リード線）',              desc:'分割形ベース。マニホールド連数の増減が可能。' },
+    { id:'41P',  label:'41P型',   base:'一体ベース',          subtype:'コンパクトタイプ',              wiring:'フラットケーブル（MIL 26極）',      sizes:['SY3000','SY5000'],             page:'P.834', code:'41P',  wiringKey:'フラットケーブル（MIL 26極）',      desc:'一体ベース／コンパクトタイプ。フラットケーブル対応。' },
+    { id:'42P',  label:'42P型',   base:'一体ベース',          subtype:'共通外部パイロット兼用タイプ',  wiring:'フラットケーブル（MIL 26極）',      sizes:['SY3000','SY5000'],             page:'P.834', code:'42P',  wiringKey:'フラットケーブル（MIL 26極）',      desc:'共通外部パイロット兼用タイプ。フラットケーブル対応。' },
+    { id:'43P',  label:'43P型',   base:'分割形ベース',        subtype:'',                              wiring:'フラットケーブル（MIL 26極）',      sizes:['SY9000'],                      page:'P.842', code:'43P',  wiringKey:'フラットケーブル（MIL 26極）',      desc:'分割形ベース。フラットケーブル対応。' },
+    { id:'42SA', label:'42SA型',  base:'一体ベース',          subtype:'',                              wiring:'EX510 ゲートウェイ方式',            sizes:['SY3000','SY5000'],             page:'P.848', code:'42SA', wiringKey:'EX510 ゲートウェイ方式',           desc:'一体ベース。シリアル伝送システム（EX510）対応。' },
+    { id:'43SA', label:'43SA型',  base:'分割形ベース',        subtype:'',                              wiring:'EX510 ゲートウェイ方式',            sizes:['SY9000'],                      page:'P.853', code:'43SA', wiringKey:'EX510 ゲートウェイ方式',           desc:'分割形ベース。シリアル伝送システム対応。' },
+    { id:'45',   label:'45型',    base:'分割形ベース',        subtype:'DINレール取付形',               wiring:'DINレール／個別配線',               sizes:['SY3000','SY5000'],             page:'P.864', code:'45',   wiringKey:'DINレール／個別配線',               desc:'DINレール上で連数の増減が可能。他の電気部品の一体取付も可能。' },
+    { id:'45ANA',label:'45-ANA型',base:'分割形ベース',        subtype:'DINレール取付形',               wiring:'DINレール／コネクタボックス',        sizes:['SY3000','SY5000'],             page:'P.876', code:'45ANA',wiringKey:'DINレール／コネクタボックス',        desc:'DINレール上で連数の増減が可能。コネクタボックス付で電気配線もワンタッチ。' },
+    { id:'45S6A',label:'45S6A型', base:'分割形ベース',        subtype:'DINレール取付形',               wiring:'DINレール／EX510ゲートウェイ',       sizes:['SY3000','SY5000'],             page:'P.884', code:'45S6A',wiringKey:'DINレール／EX510ゲートウェイ',       desc:'DINレール取付形。EX510ゲートウェイ方式。' },
+    { id:'45pl', label:'45□型',   base:'分割形ベース',        subtype:'DINレール取付形',               wiring:'DINレール／プラグインタイプ',         sizes:['SY3000','SY5000'],             page:'P.892', code:'45',   wiringKey:'DINレール／プラグインタイプ',        desc:'DINレール取付形。集中配線バリエーションが豊富。' },
+    { id:'45S6B',label:'45S6B型', base:'分割形ベース',        subtype:'DINレール取付形',               wiring:'DINレール／EX510ゲートウェイ',       sizes:['SY3000','SY5000'],             page:'P.920', code:'45S6B',wiringKey:'DINレール／EX510ゲートウェイ',       desc:'DINレール取付形。EX510ゲートウェイ方式（プラグイン）。' },
+  ]
+};
+const VTINFO = {
+  // 5ポート 2位置
+  '5p-s':{label:'5ポート 2位置 シングル',  short:'5P-2S', sols:1, ports:3, pos:2, bodyColor:'#2563eb', centerType:null},
+  '5p-d':{label:'5ポート 2位置 ダブル',    short:'5P-2D', sols:2, ports:3, pos:2, bodyColor:'#1e3a8a', centerType:null},
+  // 5ポート 3位置
+  '5p-3c':{label:'5ポート 3位置 クローズドセンタ', short:'5P-3C', sols:2, ports:3, pos:3, bodyColor:'#7c3aed', centerType:'closed'},
+  '5p-3e':{label:'5ポート 3位置 エキゾーストセンタ',short:'5P-3E', sols:2, ports:3, pos:3, bodyColor:'#0891b2', centerType:'exhaust'},
+  '5p-3p':{label:'5ポート 3位置 プレッシャセンタ', short:'5P-3P', sols:2, ports:3, pos:3, bodyColor:'#059669', centerType:'pressure'},
+  // 3ポート
+  '3p-n':{label:'3ポート NC',  short:'3P-NC', sols:1, ports:2, pos:2, bodyColor:'#b45309', centerType:null},
+  '3p-o':{label:'3ポート NO',  short:'3P-NO', sols:1, ports:2, pos:2, bodyColor:'#9f1239', centerType:null},
+  // ブランク
+  'blank':{label:'ブランク',   short:'BLNK',  sols:0, ports:0, pos:0, bodyColor:'#8a9ab0', centerType:null},
+};
+
+/* ========== STATE ========== */
+let S = {
+  seriesGroup:'SY', variantId:'SY5000', maniSeries:'SY5000', maniThread:'', maniCeukca:'', maniPortSize:'C8',
+  orientation:'h', // 'h' or 'v'
+  valves:[], selIdx:null,
+  // SYシリーズ専用
+  pipingType:'direct', // 'direct' | 'base'
+  maniVarId:'20',      // バリエーション型番ID
+};
+
+function defValve(){
+  return {
+    type:'5p-s', tag:'', note:'', color:'',
+    series:S.maniSeries||'SY5000',   // ①シリーズ
+    coil:'',           // ③コイル仕様
+    voltage:'5',       // ④定格電圧（デフォルトDC24V）
+    lead:'L',          // ⑤リード線取出し方法
+    surge:'',          // ⑥ランプ・サージ
+    manual:'',         // ⑦マニュアル
+    portSize:'C6',     // ⑧ポート口径
+    thread:'',         // ⑨ねじ
+    bracket:'',        // ⑩ブラケット
+    custom:'',         // ⑪オーダーメイド
+    ceukca:''          // ⑫CE/UKCA
+  };
+}
+function initValves(n){ const old=S.valves; S.valves=[]; for(let i=0;i<n;i++) S.valves.push(old[i]||defValve()); }
+function getVariant(){ for(const g of Object.values(SDATA)){const v=g.variants.find(v=>v.id===S.variantId);if(v)return v;} return SDATA.SY.variants[1]; }
+
+/* ========== SERIES / VARIANT ========== */
+function setSeriesGroup(g){
+  S.seriesGroup=g; S.variantId=SDATA[g].variants[0].id;
+  if(g==='SY'){ S.pipingType='direct'; S.maniVarId='20'; }
+  renderVarGrid(); renderSySection(); renderManiPnBuilder(); updateAll();
+}
+// setVariant は setManiSeries の alias（varGrid の隠しボタン用）
+function setVariant(id){ setManiSeries(id); }
+function renderVarGrid(){
+  // varGridセクションは非表示（バルブシリーズ選択はmaniSeriesSecで行う）
+  // ボタンは残すが onclick は設定しない
+  const g=SDATA[S.seriesGroup];
+  document.getElementById('varGrid').innerHTML=g.variants.map(v=>{
+    const isActive = v.id===S.variantId;
+    const cls = 'vbtn' + (isActive ? ' active' : '');
+    return '<button class="'+cls+'" style="pointer-events:none">' + v.label + '</button>';
+  }).join('');
+}
+
+/* ========== SY専用セクション ========== */
+function renderSySection(){
+  var sec = document.getElementById('syPipingSection');
+  var pnSec = document.getElementById('maniPnSection');
+  if(S.seriesGroup!=='SY'){
+    sec.style.display='none';
+    if(pnSec) pnSec.style.display='none';
+    return;
+  }
+  sec.style.display='';
+  if(pnSec) pnSec.style.display='';
+  document.getElementById('pipBtn_direct').classList.toggle('active', S.pipingType==='direct');
+  document.getElementById('pipBtn_base'  ).classList.toggle('active', S.pipingType==='base');
+
+  var vars = SY_MANI_VARS[S.pipingType];
+  var list = document.getElementById('maniVarList');
+  list.innerHTML = vars.map(function(m){
+    var isSel     = (m.id === S.maniVarId);
+    var isSY9only = (m.sizes.length === 1 && m.sizes[0] === 'SY9000');
+    var unavail   = !m.sizes.includes(S.maniSeries);
+    var badge = '';
+    if(isSY9only){
+      badge = '<span style="font-size:8px;background:#fef2f2;color:#e84040;'
+            + 'padding:1px 5px;border-radius:2px;margin-left:3px;font-weight:700">SY9000専用</span>';
+    } else if(m.sizes.length < 4){
+      badge = '<span style="font-size:8px;background:#e8f0fe;color:#1a56db;'
+            + 'padding:1px 4px;border-radius:2px;margin-left:3px">' + m.sizes.join('/') + '</span>';
+    }
+    var bdr   = isSel ? '#2d7bd4' : (unavail ? '#e5e7eb' : '#d0d7e2');
+    var bg    = isSel ? '#f0f6ff' : (unavail ? '#f9fafb' : '#fff');
+    var opa   = unavail ? '0.7' : '1';  // 他サイズ専用は少し薄く（参考表示）
+    var curs  = 'pointer';
+    // 全バリエーションクリック可。非対応の場合はsetManiVar内でシリーズを自動切替
+    var ttl   = unavail ? (m.label + '：クリックすると対応シリーズに切り替えます') : '';
+    var click = 'setManiVar(\'' + m.id + '\')';
+    var lc    = isSel  ? '#0044aa' : '#1a2232';
+    var sub   = m.subtype ? (' / ' + m.subtype) : '';
+    return '<button onclick="' + click + '" title="' + ttl + '" style="'
+      + 'text-align:left;border:1.5px solid ' + bdr + ';border-radius:5px;padding:6px 8px;'
+      + 'cursor:' + curs + ';background:' + bg + ';opacity:' + opa + ';'
+      + 'transition:all .15s;display:block;width:100%">'
+      + '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">'
+      + '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:700;color:' + lc + '">' + m.label + '</span>'
+      + badge
+      + '<span style="margin-left:auto;font-size:8px;color:#94a3b8">' + m.page + '</span>'
+      + '</div>'
+      + '<div style="font-size:9px;color:#4a6080;line-height:1.3">' + m.base + sub + '</div>'
+      + '<div style="font-size:9px;color:#64748b;margin-top:1px">' + m.wiring + '</div>'
+      + '</button>';
+  }).join('');
+
+  var cur2 = SY_MANI_VARS[S.pipingType].find(function(m){ return m.id === S.maniVarId; });
+  if(cur2){
+    var sel = document.getElementById('cfgW');
+    for(var i=0; i<sel.options.length; i++){
+      if(sel.options[i].text === cur2.wiringKey){ sel.selectedIndex=i; break; }
+    }
+  }
+}
+function setPipingType(t){
+  S.pipingType=t;
+  // 現在のシリーズで使えるバリエーションを優先して選択
+  const avail=SY_MANI_VARS[t].filter(m=>m.sizes.includes(S.variantId));
+  S.maniVarId = avail.length>0 ? avail[0].id : SY_MANI_VARS[t][0].id;
+  renderSySection(); renderManiPortChips(); renderManiPnBuilder(); updateAll(); renderPnBuilder();
+}
+function setManiVar(id){
+  S.maniVarId = id;
+  const mvi = [...SY_MANI_VARS.direct,...SY_MANI_VARS.base].find(function(m){ return m.id===id; });
+  if(mvi){
+    if(!mvi.sizes.includes(S.maniSeries)){
+      // 現在のmaniSeriesが非対応 → SY5000優先でフォールバック（SY3000に固定しない）
+      var fallbackOrder = ['SY5000','SY7000','SY3000','SY9000'];
+      var newSeries = null;
+      for(var fi=0; fi<fallbackOrder.length; fi++){
+        if(mvi.sizes.includes(fallbackOrder[fi])){ newSeries = fallbackOrder[fi]; break; }
+      }
+      if(!newSeries) newSeries = mvi.sizes[0];
+      S.maniSeries = newSeries;
+      S.variantId  = newSeries;
+      // チップUIを更新
+      document.querySelectorAll('.mani-series-chip').forEach(function(b){
+        b.classList.toggle('active', b.dataset.ms === newSeries);
+      });
+      showToast(id+'型は'+newSeries+'専用のため、シリーズを'+newSeries+'に切り替えました');
+    } else {
+      // 対応している → variantId を maniSeries に合わせるだけ（ユーザー選択を維持）
+      S.variantId = S.maniSeries;
+    }
+  }
+  // 混合取付不可の型式はすべてのバルブをマニホールドシリーズに統一
+  var isMixed = MIXED_TYPES.includes(id);
+  if(!isMixed){
+    S.valves.forEach(function(v){
+      if(v.type !== 'blank') v.series = S.maniSeries;
+    });
+    if(S.selIdx !== null){
+      refreshChips(S.valves[S.selIdx]);
+      renderPnBuilder();
+    }
+  }
+  // 3ポートバルブのサニタイズ（型式変更後も確認）
+  if(sanitizeValvesFor3port()){
+    showToast('3ポートバルブを搭載不可のためシングルソレノイドに変更しました（'+get3portDenyReason()+'）');
+  }
+  update3portCards();
+  renderSySection(); renderManiPortChips(); renderManiPnBuilder(); updateAll();
+}
+function getManiVarInfo(){
+  if(S.seriesGroup!=='SY') return null;
+  const all=[...SY_MANI_VARS.direct,...SY_MANI_VARS.base];
+  return all.find(m=>m.id===S.maniVarId)||null;
+}
+
+/* ==========================================================
+   マニホールド品番ビルダー
+   各型式の品番フォーマット定義 + renderManiPnBuilder()
+   ========================================================== */
+
+// 型式コードからシリーズ番号を取得
+function getManiSizeCode(){
+  var m = {'SY3000':'3','SY5000':'5','SY7000':'7','SY9000':'9'};
+  return m[S.maniSeries] || '?';
+}
+
+// 連数を2桁ゼロ埋め
+function getManiStations(){
+  var n = S.valves.length;
+  return (n < 10 ? '0' : '') + n;
+}
+
+// 型式コード（SY_MANI_VARSのid）→ 品番ブロック定義を返す
+// fields: [{lbl, val, req, fixed, maxw}]
+function getManiPnFields(maniVarId){
+  var sz  = getManiSizeCode();        // 3/5/7/9
+  var st  = getManiStations();        // 02〜20
+  var thr = S.maniThread || '';       // ''/00F/00N/00T
+  var ce  = S.maniCeukca || '';       // ''/Q
+
+  // 固定テキストブロック
+  function fix(v, w){ return {lbl:'', val:v, req:true, fixed:true, w:w||0}; }
+  // 必須選択ブロック
+  function req(lbl, v, w){ return {lbl:lbl, val:v, req:true,  fixed:false, w:w||1.6}; }
+  // 任意ブロック（無記号あり）
+  function opt(lbl, v, w){ return {lbl:lbl, val:v, req:false, fixed:false, w:w||1.6}; }
+
+  // ねじ（共通）: 無記号=Rc, 00F=G, 00N=NPT, 00T=NPTF
+  var thrF = opt('ねじ', thr, 2.4);
+  // CE/UKCA（共通）
+  var ceF  = opt('CE/UKCA', ce, 1.2);
+  // 連数（共通）
+  var stF  = req('連数', st, 1.6);
+
+  // 各型式ごとのフィールド定義
+  var formats = {
+    // ── 直接配管形 ──────────────────────────────────────
+    '20':  [fix('SS5Y'), req('sz',sz,1.2), fix('-20-'), stF, thrF, fix('-'), ceF],
+    '23':  [fix('SS5Y'), req('sz',sz,1.2), fix('-23-'), stF, thrF, fix('-'), ceF],
+    '20P': [fix('SS5Y'), req('sz',sz,1.2), fix('-20P-'), stF, thrF, fix('-'), ceF],
+    '23P': [fix('SS5Y'), req('sz',sz,1.2), fix('-23P-'), stF, fix('-'), thrF, fix('-'), ceF],
+    '20SA':[fix('SS5Y'), req('sz',sz,1.2), fix('-20SA-'), stF, thrF, fix('-'), ceF],
+    '23SA':[fix('SS5Y'), req('sz',sz,1.2), fix('-23SA-'), stF, fix('-D-'), thrF, fix('-'), ceF],
+    '60':  [fix('SS5Y'), req('sz',sz,1.2), fix('-60-'), stF, opt('U/D','U',1.2), thrF, fix('-'), ceF],
+    // ── ベース配管形 ──────────────────────────────────────
+    '41':  [fix('SS5Y'), req('sz',sz,1.2), fix('-41-'), stF, fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '41P': [fix('SS5Y'), req('sz',sz,1.2), fix('-41P-'), stF, fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '42':  [fix('SS5Y'), req('sz',sz,1.2), fix('-42-'), stF, fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '42P': [fix('SS5Y'), req('sz',sz,1.2), fix('-42P-'), stF, fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '43':  [fix('SS5Y'), req('sz',sz,1.2), fix('-43-'), stF, opt('U/B','',1.2), fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '43P': [fix('SS5Y'), req('sz',sz,1.2), fix('-43P-'), stF, fix('-'), thrF, fix('-'), ceF],
+    '42SA':[fix('SS5Y'), req('sz',sz,1.2), fix('-42SA-'), stF, fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '43SA':[fix('SS5Y'), req('sz',sz,1.2), fix('-43SA-'), stF, fix('-D-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '45':  [fix('SS5Y'), req('sz',sz,1.2), fix('-45-'), stF, opt('U/D','',1.2), fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '45NA':[fix('SS5Y'), req('sz',sz,1.2), fix('-45-A'), opt('U/D','',1.2), fix('-'), stF, opt('D/U','',1.2), fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '45S6A':[fix('SS5Y'), req('sz',sz,1.2), fix('-45S6A-'), stF, thrF, fix('-'), ceF],
+    '45PL': [fix('SS5Y'), req('sz',sz,1.2), fix('-45-'), stF, opt('U/D','',1.2), fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+    '45S6B':[fix('SS5Y'), req('sz',sz,1.2), fix('-45S6B'), opt('D/U','',1.2), fix('-'), stF, opt('U/D','',1.2), fix('-'), req('A,Bポート', S.maniPortSize||'', 2.8), thrF, fix('-'), ceF],
+  };
+
+  return formats[maniVarId] || [fix('SS5Y'), req('sz',sz,1.2), fix('-?-'), stF, thrF, fix('-'), ceF];
+}
+
+// ポート口径UI更新
+function renderManiPortChips(){
+  var portSec = document.getElementById('maniPortSec');
+  var chipsEl = document.getElementById('maniPortChips');
+  if(!portSec || !chipsEl) return;
+
+  // ベース配管形のみ表示
+  var isBase = BASE_PIPING_TYPES.includes(S.maniVarId);
+  portSec.style.display = isBase ? '' : 'none';
+  if(!isBase) return;
+
+  var sizes = MANI_PORT_SIZES[S.maniSeries] || [];
+
+  // 現在の選択値が有効か確認、無効なら先頭にリセット
+  var validCodes = sizes.map(function(s){ return s.code; });
+  if(!validCodes.includes(S.maniPortSize)){
+    S.maniPortSize = DEFAULT_PORT_SIZE[S.maniSeries] || (sizes[0] ? sizes[0].code : '');
+  }
+
+  // グループ別に描画
+  var lastGroup = '';
+  var html = '';
+  for(var i=0; i<sizes.length; i++){
+    var s = sizes[i];
+    var isActive = (s.code === S.maniPortSize);
+    // グループ変わり目にラベルを挿入
+    if(s.group !== lastGroup){
+      var glabel = s.group === 'ねじ' ? 'ねじ配管' : (s.group === 'mm' ? 'ワンタッチ(mm)' : 'ワンタッチ(inch)');
+      html += '<span style="width:100%;font-size:8px;color:#94a3b8;margin-top:'+(lastGroup?'4px':'0')+';">' + glabel + '</span>';
+      lastGroup = s.group;
+    }
+    html += '<button class="mani-chip' + (isActive ? ' active' : '') + '" '
+          + 'data-port="' + s.code + '" '
+          + 'title="' + s.label + '" '
+          + 'onclick="setManiPort(\'' + s.code + '\')">'
+          + '<span style="font-family:IBM Plex Mono,monospace;font-weight:700">' + s.code + '</span>'
+          + '<br><span style="font-size:8px;color:inherit;opacity:.8">' + s.note.replace('ワンタッチミリ','WTmm').replace('ワンタッチインチ','WTin') + '</span>'
+          + '</button>';
+  }
+  chipsEl.innerHTML = html;
+}
+
+function setManiPort(code){
+  S.maniPortSize = code;
+  renderManiPortChips();
+  renderManiPnBuilder();
+  buildModel();
+}
+
+function renderManiPnBuilder(){
+  var el = document.getElementById('maniPnRow');
+  if(!el || S.seriesGroup !== 'SY') return;
+
+  var fields = getManiPnFields(S.maniVarId);
+
+  var html = '';
+  for(var i=0; i<fields.length; i++){
+    var f = fields[i];
+    if(f.fixed){
+      html += '<span style="font-weight:700;color:' + (f.val==='SS5Y'?'#1a2232':'#64748b') + ';'
+            + 'font-size:' + (f.val==='SS5Y'?'12':'10') + 'px;padding:0 1px">' + f.val + '</span>';
+    } else {
+      var isEmpty = (f.val === '' || f.val === null || f.val === undefined);
+      var w = (f.maxw || f.w || 1.6) + 'em';
+      if(isEmpty && f.req){
+        html += '<span title="' + f.lbl + '" style="display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:' + w + ';height:18px;border:1.5px dashed #f97316;border-radius:2px;'
+              + 'background:#fff8f1;font-size:9px;color:#f97316;vertical-align:middle">' + f.lbl + '</span>';
+      } else if(isEmpty){
+        html += '<span title="' + f.lbl + '：無記号" style="display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:' + w + ';height:18px;border:1.5px solid #93c5fd;border-radius:2px;'
+              + 'background:#f0f9ff;font-size:10px;color:#3b82f6;vertical-align:middle">―</span>';
+      } else {
+        html += '<span title="' + f.lbl + '：' + f.val + '" style="display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:' + w + ';height:18px;border:1.5px solid #2d7bd4;border-radius:2px;'
+              + 'background:#ebf3ff;font-size:10px;font-weight:700;color:#0044aa;vertical-align:middle;padding:0 2px">'
+              + f.val + '</span>';
+      }
+    }
+  }
+  el.innerHTML = html;
+}
+
+// 45型・45-ANA型は混合取付可能（バルブシリーズを固定しない）
+var MIXED_TYPES = ['45','45NA'];
+
+// A,Bポート管接続口径 シリーズ別選択肢
+var MANI_PORT_SIZES = {
+  'SY3000': [
+    {code:'M5',  label:'M5 (M5×0.8)',   note:'ねじ配管',      group:'ねじ'},
+    {code:'01',  label:'01 (Rc1/8)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'C4',  label:'C4 (ø4mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'C6',  label:'C6 (ø6mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'N3',  label:'N3 (ø5/32")',    note:'ワンタッチインチ',group:'in'},
+    {code:'N7',  label:'N7 (ø1/4")',     note:'ワンタッチインチ',group:'in'},
+  ],
+  'SY5000': [
+    {code:'01',  label:'01 (Rc1/8)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'02',  label:'02 (Rc1/4)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'C6',  label:'C6 (ø6mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'C8',  label:'C8 (ø8mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'N7',  label:'N7 (ø1/4")',     note:'ワンタッチインチ',group:'in'},
+    {code:'N9',  label:'N9 (ø5/16")',    note:'ワンタッチインチ',group:'in'},
+  ],
+  'SY7000': [
+    {code:'02',  label:'02 (Rc1/4)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'C8',  label:'C8 (ø8mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'C10', label:'C10 (ø10mm)',    note:'ワンタッチミリ', group:'mm'},
+    {code:'N9',  label:'N9 (ø5/16")',    note:'ワンタッチインチ',group:'in'},
+    {code:'N11', label:'N11 (ø3/8")',    note:'ワンタッチインチ',group:'in'},
+  ],
+  'SY9000': [
+    {code:'02',  label:'02 (Rc1/4)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'03',  label:'03 (Rc3/8)',     note:'ねじ配管',      group:'ねじ'},
+    {code:'C8',  label:'C8 (ø8mm)',      note:'ワンタッチミリ', group:'mm'},
+    {code:'C10', label:'C10 (ø10mm)',    note:'ワンタッチミリ', group:'mm'},
+    {code:'C12', label:'C12 (ø12mm)',    note:'ワンタッチミリ', group:'mm'},
+    {code:'N9',  label:'N9 (ø5/16")',    note:'ワンタッチインチ',group:'in'},
+    {code:'N11', label:'N11 (ø3/8")',    note:'ワンタッチインチ',group:'in'},
+  ],
+};
+
+// シリーズ別デフォルトポートサイズ
+var DEFAULT_PORT_SIZE = {
+  'SY3000': 'C6', 'SY5000': 'C8', 'SY7000': 'C10', 'SY9000': 'C12'
+};
+
+// ベース配管形でA,Bポート口径が品番に含まれる型式（直接配管形は含まない）
+var BASE_PIPING_TYPES = ['41','41P','42','42P','43','43P','42SA','43SA','45','45NA','45S6A','45PL','45S6B'];
+
+function setManiSeries(series){
+  S.maniSeries = series;
+  S.variantId  = series;
+
+  // ── チップUI更新 ──
+  document.querySelectorAll('.mani-series-chip').forEach(function(b){
+    b.classList.toggle('active', b.dataset.ms === series);
+  });
+
+  // ── 現在のバリエーションがこのシリーズに非対応なら対応バリエーションへ自動切替 ──
+  var allVars = SY_MANI_VARS[S.pipingType];
+  var mvi = allVars.find(function(m){ return m.id === S.maniVarId; });
+  if(mvi && !mvi.sizes.includes(series)){
+    var avail = allVars.filter(function(m){ return m.sizes.includes(series); });
+    if(avail.length > 0) S.maniVarId = avail[0].id;
+  }
+
+  // ── SY7000/9000選択時：3ポートバルブをシングルに自動リセット ──
+  if(sanitizeValvesFor3port()){
+    showToast('3ポートバルブを搭載不可のためシングルソレノイドに変更しました（'+get3portDenyReason()+'）');
+  }
+  update3portCards();
+
+  // ── 混合取付不可の型式はすべてのバルブシリーズをマニホールドシリーズに統一 ──
+  var isMixed = MIXED_TYPES.includes(S.maniVarId);
+  if(!isMixed){
+    S.valves.forEach(function(v){
+      if(v.type !== 'blank') v.series = series;
+    });
+    if(S.selIdx !== null){
+      refreshChips(S.valves[S.selIdx]);
+      renderPnBuilder();
+    }
+  }
+
+  // マニホールドシリーズ変更時、ポートサイズをシリーズ適合デフォルトへリセット
+  S.maniPortSize = DEFAULT_PORT_SIZE[series] || 'C8';
+
+  renderVarGrid(); renderSySection(); renderManiPortChips(); renderManiPnBuilder(); updateAll();
+}
+
+function setManiChip(el){
+  var key = el.dataset.mkey;
+  var val = el.dataset.mval;
+  S[key] = val;
+  document.querySelectorAll('.mani-chip[data-mkey="'+key+'"]').forEach(function(b){
+    b.classList.toggle('active', b.dataset.mval === val);
+  });
+  renderManiPnBuilder();
+  buildModel();
+}
+
+
+/* トースト通知共通関数 */
+function showToast(text, color){
+  const msg=document.createElement('div');
+  msg.textContent=text;
+  Object.assign(msg.style,{position:'fixed',bottom:'16px',left:'50%',transform:'translateX(-50%)',
+    background:color||'#1e3a8a',color:'#fff',padding:'8px 18px',borderRadius:'6px',fontSize:'12px',
+    zIndex:'9999',boxShadow:'0 4px 12px rgba(0,0,0,.3)',opacity:'1',transition:'opacity .5s',
+    whiteSpace:'nowrap',maxWidth:'90vw'});
+  document.body.appendChild(msg);
+  setTimeout(()=>{ msg.style.opacity='0'; setTimeout(()=>msg.remove(),600); }, 2800);
+}
+/* 現在選択中のバリエーションがSY9000専用か判定 */
+function isManiVarSY9only(){
+  const mvi = getManiVarInfo();
+  if(!mvi) return false;
+  return mvi.sizes.length===1 && mvi.sizes[0]==='SY9000';
+}
+
+/* ========== ORIENTATION ========== */
+function setOrient(o){
+  S.orientation=o;
+  document.getElementById('btnH').classList.toggle('active',o==='h');
+  document.getElementById('btnV').classList.toggle('active',o==='v');
+  renderManifold();
+}
+
+/* ========== STATION COUNT ========== */
+function stDelta(d){
+  const n=Math.max(1,Math.min(24,S.valves.length+d));
+  if(n===S.valves.length)return;
+  initValves(n);
+  if(S.selIdx!==null&&S.selIdx>=n){S.selIdx=null;closeRP();}
+  document.getElementById('stNum').textContent=n;
+  renderManifold(); buildModel(); renderManiPnBuilder();
+}
+
+/* ========== SVG HELPERS ========== */
+function portCircle(cx,cy,r,active,label,labelPos){
+  const fill=active?'#ffffff':'#c8d4e0';
+  const stroke=active?'#3a5070':'#8a9ab0';
+  const xr=r*0.58;
+  let lbl='';
+  if(label){
+    if(labelPos==='left') lbl=`<text x="${cx-r-5}" y="${cy+3.5}" text-anchor="end" font-size="9" font-family="IBM Plex Mono,monospace" fill="#4a5a70" font-weight="600">${label}</text>`;
+    else if(labelPos==='right') lbl=`<text x="${cx+r+5}" y="${cy+3.5}" text-anchor="start" font-size="9" font-family="IBM Plex Mono,monospace" fill="#4a5a70" font-weight="600">${label}</text>`;
+    else if(labelPos==='bottom') lbl=`<text x="${cx}" y="${cy+r+11}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#4a5a70" font-weight="600">${label}</text>`;
+    else lbl=`<text x="${cx}" y="${cy-r-5}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#4a5a70" font-weight="600">${label}</text>`;
+  }
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+<line x1="${cx-xr}" y1="${cy-xr}" x2="${cx+xr}" y2="${cy+xr}" stroke="${stroke}" stroke-width="1.2"/>
+<line x1="${cx+xr}" y1="${cy-xr}" x2="${cx-xr}" y2="${cy+xr}" stroke="${stroke}" stroke-width="1.2"/>
+${lbl}`;
+}
+
+/* --- 縦方向ソレノイド（横向きマニホールド用）--- */
+// direction: 'up' = ボディ上端から上へ突き出す / 'down' = ボディ下端から下へ突き出す
+function drawSolV(cx, anchorY, direction, color){
+  const w=20, h=34, termH=9, capH=8, pinH=5, gap=3;
+  let pinY, termTop, coilTop, capTop;
+  if(direction==='up'){
+    // 下(ボディ側)からpin→term→coil→capの順で上へ
+    pinY    = anchorY - gap - pinH;
+    termTop = pinY - termH;
+    coilTop = termTop - h;
+    capTop  = coilTop - capH;
+  } else {
+    // 上(ボディ側)からpin→term→coil→capの順で下へ
+    pinY    = anchorY + gap;
+    termTop = pinY + pinH;
+    coilTop = termTop + termH;
+    capTop  = coilTop + h;
+  }
+  return `
+    <rect x="${cx-7}"   y="${capTop}"  width="14" height="${capH}"  fill="#7a9ab8" stroke="#4a6a88" stroke-width="1" rx="1.5"/>
+    <rect x="${cx-w/2}" y="${coilTop}" width="${w}" height="${h}"   fill="${color}" stroke="#1a2d42" stroke-width="1" rx="2"/>
+    ${[8,14,20,26].map(dy=>`<line x1="${cx-w/2+3}" y1="${coilTop+dy}" x2="${cx+w/2-3}" y2="${coilTop+dy}" stroke="rgba(255,255,255,.15)" stroke-width="0.8"/>`).join('')}
+    <rect x="${cx-6}"   y="${termTop}" width="12" height="${termH}" fill="#3a5a7a" stroke="#1a2d42" stroke-width="1" rx="1"/>
+    <rect x="${cx-2}"   y="${pinY}"    width="4"  height="${pinH}"  fill="#5a7a9a" stroke="#1a2d42" stroke-width="0.8"/>
+    <circle cx="${cx+w/2-5}" cy="${coilTop+6}" r="3.5" fill="#00e087" opacity="0.9"/>
+    <circle cx="${cx+w/2-5}" cy="${coilTop+6}" r="2"   fill="#80ffcc" opacity="0.7"/>`;
+}
+
+// 横向きマニホールド：シングル=上のみ、ダブル=上＋下（両端）
+function solenoidV(cx, bodyTop, bodyBottom, count, color){
+  let s = drawSolV(cx, bodyTop,    'up',   color);
+  if(count===2) s += drawSolV(cx, bodyBottom, 'down', color);
+  return s;
+}
+
+/* --- 横方向ソレノイド（縦向きマニホールド用）--- */
+// direction: 'right' = ボディ右端から右へ / 'left' = ボディ左端から左へ
+function drawSolH(anchorX, cy, direction, color){
+  const h=20, w=34, termW=9, capW=8, pinW=5, gap=3;
+  let pinX, termX, coilX, capX;
+  if(direction==='right'){
+    pinX  = anchorX + gap;
+    termX = pinX + pinW;
+    coilX = termX + termW;
+    capX  = coilX + w;
+  } else {
+    // 左向き：capが最左
+    pinX  = anchorX - gap - pinW;
+    termX = pinX - termW;
+    coilX = termX - w;
+    capX  = coilX - capW;
+  }
+  return `
+    <rect x="${pinX}"  y="${cy-2}"   width="${pinW}"  height="4"   fill="#5a7a9a" stroke="#1a2d42" stroke-width="0.8"/>
+    <rect x="${termX}" y="${cy-5}"   width="${termW}" height="10"  fill="#3a5a7a" stroke="#1a2d42" stroke-width="1" rx="1"/>
+    <rect x="${coilX}" y="${cy-h/2}" width="${w}"     height="${h}" fill="${color}" stroke="#1a2d42" stroke-width="1" rx="2"/>
+    ${[8,14,20,26].map(dx=>`<line x1="${coilX+dx}" y1="${cy-h/2+2}" x2="${coilX+dx}" y2="${cy+h/2-2}" stroke="rgba(255,255,255,.15)" stroke-width="0.8"/>`).join('')}
+    <rect x="${capX}"  y="${cy-6}"   width="${capW}"  height="12"  fill="#7a9ab8" stroke="#4a6a88" stroke-width="1" rx="1.5"/>
+    <circle cx="${direction==='right'?coilX+6:capX+capW+w-6}" cy="${cy-h/2+6}" r="3.5" fill="#00e087" opacity="0.9"/>
+    <circle cx="${direction==='right'?coilX+6:capX+capW+w-6}" cy="${cy-h/2+6}" r="2"   fill="#80ffcc" opacity="0.7"/>`;
+}
+
+// 縦向きマニホールド：シングル=右のみ、ダブル=右＋左（両端）
+function solenoidH(bodyLeft, bodyRight, cy, count, color){
+  let s = drawSolH(bodyRight, cy, 'right', color);
+  if(count===2) s += drawSolH(bodyLeft, cy, 'left', color);
+  return s;
+}
+
+/* ========== MANIFOLD SVG ========== */
+function renderManifold(){
+  const isH = S.orientation==='h';
+  const wrap = document.getElementById('manifoldWrap');
+
+  // ダブルソレノイドが1つでもあるか判定
+  const hasDbl = S.valves.some(v=>['5p-d','5p-3c','5p-3e','5p-3p'].includes(v.type));
+
+  if(isH){
+    // 横向き：ソレノイドは上（シングル）、または上＋下（ダブル）
+    // ソレノイド1本の高さ = gap(3)+pin(5)+term(9)+coil(34)+cap(8) = 59px
+    const SOL_H = 62; // 上側余白
+    const BOT_SOL_H = hasDbl ? 64 : 0; // 下側余白（ダブル時のみ）
+    const SW=70, BH=138, LabelH=20;
+    const supW=44, endW=28, addW=44;
+    const n=S.valves.length;
+    const bodyY=SOL_H;
+    const totalW=supW+n*SW+endW+addW+20;
+    const totalH=SOL_H+BH+BOT_SOL_H+LabelH+10;
+    const portLabelX=supW-6;
+    const pEB=bodyY+28, pP=bodyY+69, pEA=bodyY+110;
+
+    let body=`<defs>
+      <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d8e2ed"/><stop offset="40%" stop-color="#c0cedd"/><stop offset="100%" stop-color="#a8b8cc"/>
+      </linearGradient>
+      <linearGradient id="supGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#1e3050"/><stop offset="100%" stop-color="#2d4a6a"/>
+      </linearGradient>
+    </defs>`;
+
+    // Supply block
+    body+=`
+    <rect x="0" y="${bodyY}" width="${supW}" height="${BH}" fill="url(#supGrad)" rx="3 0 0 3"/>
+    <rect x="0" y="${bodyY}" width="${supW}" height="${BH}" fill="none" stroke="#1a2d42" stroke-width="1.2" rx="3 0 0 3"/>
+    <text x="${supW/2}" y="${bodyY+BH/2-16}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.8)" font-family="IBM Plex Mono,monospace" transform="rotate(-90,${supW/2},${bodyY+BH/2})">SUPPLY</text>
+    <circle cx="${supW/2}" cy="${pP}"  r="8" fill="#e84040" opacity="0.9"/>
+    <circle cx="${supW/2}" cy="${pP}"  r="4" fill="#ff9999"/>
+    <circle cx="${supW/2}" cy="${pEA}" r="6" fill="#5a8aaa" opacity="0.8"/>
+    <circle cx="${supW/2}" cy="${pEB}" r="6" fill="#5a8aaa" opacity="0.8"/>
+    <text x="${portLabelX-2}" y="${pEB+3.5}" text-anchor="end" font-size="9" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.7)" font-weight="700">EB</text>
+    <text x="${portLabelX-2}" y="${pP+3.5}"  text-anchor="end" font-size="9" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.7)" font-weight="700">P</text>
+    <text x="${portLabelX-2}" y="${pEA+3.5}" text-anchor="end" font-size="9" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.7)" font-weight="700">EA</text>`;
+
+    body+=`<rect x="${supW}" y="${bodyY}" width="${n*SW}" height="${BH}" fill="url(#bodyGrad)" stroke="#8a9ab0" stroke-width="1"/>`;
+    body+=`
+    <line x1="${supW}" y1="${pEB}" x2="${supW+n*SW}" y2="${pEB}" stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>
+    <line x1="${supW}" y1="${pP}"  x2="${supW+n*SW}" y2="${pP}"  stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>
+    <line x1="${supW}" y1="${pEA}" x2="${supW+n*SW}" y2="${pEA}" stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>`;
+
+    for(let i=0;i<n;i++){
+      const v=S.valves[i], x=supW+i*SW, cx=x+SW/2;
+      const info=VTINFO[v.type], isBlank=v.type==='blank';
+      const isSel=S.selIdx===i;
+      if(i>0) body+=`<line x1="${x}" y1="${bodyY}" x2="${x}" y2="${bodyY+BH}" stroke="#8a9ab0" stroke-width="1.2"/>`;
+      // カラーストライプ（上部）
+      body+=`<rect x="${x+2}" y="${bodyY+2}" width="${SW-4}" height="5" fill="${v.color||info.bodyColor}" rx="1.5" opacity="0.85"/>`;
+      // ソレノイド：ダブル・3位置は上下両方に描画
+      if(!isBlank) body+=solenoidV(cx, bodyY, bodyY+BH, info.sols, v.color||info.bodyColor);
+      if(!isBlank){
+        body+=portCircle(cx,pEB,11,true,'','');
+        body+=portCircle(cx,pP, 13,true,'','');
+        body+=portCircle(cx,pEA,11,true,'','');
+        // 3位置バルブ: センターポジションバッジ
+        if(info.pos===3){
+          const ct=info.centerType;
+          const bgC = ct==='closed'?'#7c3aed':ct==='exhaust'?'#0891b2':'#059669';
+          const lblC = ct==='closed'?'CLS':ct==='exhaust'?'EXH':'PRS';
+          // 中央ラインで3位置を示す帯
+          body+=`<rect x="${x+3}" y="${bodyY+BH/2-8}" width="${SW-6}" height="16" fill="${bgC}" rx="3" opacity="0.12"/>`;
+          body+=`<rect x="${x+3}" y="${bodyY+BH/2-8}" width="${SW-6}" height="16" fill="none" stroke="${bgC}" stroke-width="1.2" rx="3" opacity="0.6"/>`;
+          body+=`<text x="${cx}" y="${bodyY+BH/2+3.5}" text-anchor="middle" font-size="8" font-weight="700" fill="${bgC}" font-family="IBM Plex Mono,monospace">${lblC}</text>`;
+        }
+      } else {
+        body+=portCircle(cx,pEB,11,false,'','');
+        body+=portCircle(cx,pP, 13,false,'','');
+        body+=portCircle(cx,pEA,11,false,'','');
+        body+=`<line x1="${x+8}" y1="${bodyY+8}" x2="${x+SW-8}" y2="${bodyY+BH-8}" stroke="#8a9ab0" stroke-width="1" opacity="0.4"/>`;
+        body+=`<line x1="${x+SW-8}" y1="${bodyY+8}" x2="${x+8}" y2="${bodyY+BH-8}" stroke="#8a9ab0" stroke-width="1" opacity="0.4"/>`;
+      }
+      // ラベル：ダブル時はボットソレノイドの下
+      const labelY = bodyY+BH+BOT_SOL_H+12;
+      body+=`<text x="${cx}" y="${labelY}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#64748b" font-weight="600">${i+1}連目</text>`;
+      const tagShort=(v.tag||'').length>7?(v.tag||'').slice(0,6)+'…':(v.tag||'');
+      if(tagShort) body+=`<text x="${cx}" y="${bodyY+BH-6}" text-anchor="middle" font-size="7.5" font-family="Noto Sans JP,sans-serif" fill="#2d5a8a">${tagShort}</text>`;
+      if(isSel) body+=`<rect x="${x}" y="${bodyY}" width="${SW}" height="${BH}" fill="none" stroke="#0066cc" stroke-width="2.5" opacity="0.9"/>
+        <rect x="${x}" y="${bodyY}" width="${SW}" height="${BH}" fill="rgba(0,102,204,.06)"/>`;
+      body+=`<rect class="station-click" x="${x}" y="${bodyY}" width="${SW}" height="${BH}" fill="transparent" onclick="selStation(${i})" style="cursor:pointer"/>`;
+    }
+
+    const ex=supW+n*SW;
+    body+=`<rect x="${ex}" y="${bodyY}" width="${endW}" height="${BH}" fill="#c8d4e0" stroke="#8a9ab0" stroke-width="1" rx="0 3 3 0"/>
+    <text x="${ex+endW/2}" y="${bodyY+BH/2+4}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" fill="#8a9ab0" font-weight="600" transform="rotate(90,${ex+endW/2},${bodyY+BH/2})">END</text>`;
+
+    const ax=ex+endW+6;
+    body+=`<rect x="${ax}" y="${bodyY+BH/2-22}" width="${addW-6}" height="44" fill="rgba(45,122,212,.06)" stroke="#bad4f0" stroke-width="1.5" stroke-dasharray="4,3" rx="4" style="cursor:pointer" onclick="stDelta(1)"/>
+    <text x="${ax+(addW-6)/2}" y="${bodyY+BH/2+5}"  text-anchor="middle" font-size="20" fill="#2d7bd4" style="cursor:pointer" onclick="stDelta(1)" pointer-events="none">＋</text>
+    <text x="${ax+(addW-6)/2}" y="${bodyY+BH/2+18}" text-anchor="middle" font-size="8"  font-family="Noto Sans JP" fill="#2d7bd4" style="cursor:pointer" onclick="stDelta(1)" pointer-events="none">追加</text>`;
+
+    body+=`
+    <text x="${ex+endW+48}" y="${pEB+3.5}" text-anchor="start" font-size="9" font-family="IBM Plex Mono,monospace" fill="#94a3b8">EB</text>
+    <text x="${ex+endW+48}" y="${pP+3.5}"  text-anchor="start" font-size="9" font-family="IBM Plex Mono,monospace" fill="#94a3b8">P</text>
+    <text x="${ex+endW+48}" y="${pEA+3.5}" text-anchor="start" font-size="9" font-family="IBM Plex Mono,monospace" fill="#94a3b8">EA</text>
+    <line x1="${ex+endW+4}" y1="${pEB}" x2="${ex+endW+46}" y2="${pEB}" stroke="#d0d7e2" stroke-width="0.8"/>
+    <line x1="${ex+endW+4}" y1="${pP}"  x2="${ex+endW+46}" y2="${pP}"  stroke="#d0d7e2" stroke-width="0.8"/>
+    <line x1="${ex+endW+4}" y1="${pEA}" x2="${ex+endW+46}" y2="${pEA}" stroke="#d0d7e2" stroke-width="0.8"/>`;
+
+    body+=`<text x="${supW+n*SW/2}" y="${bodyY-8}" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="Noto Sans JP">← ソレノイドを下に見て右から 1連目、2連目… と数えます</text>`;
+    if(hasDbl) body+=`<text x="${supW+n*SW/2}" y="${bodyY+BH+BOT_SOL_H+28}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="Noto Sans JP">※ ダブルソレノイド：上下両端にコイルあり</text>`;
+
+    wrap.innerHTML=`<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="overflow:visible">${body}</svg>`;
+
+  } else {
+    // 縦向き：ソレノイドは右（シングル）、または右＋左（ダブル）
+    // ソレノイド1本の幅 = gap(3)+pin(5)+term(9)+coil(34)+cap(8) = 59px
+    const SOL_W = 62;
+    const LEFT_SOL_W = hasDbl ? SOL_W : 0; // 左側余白（ダブル時のみ）
+    const SH=62, BW=140;
+    const supH=40, endH=24, addH=44;
+    const n=S.valves.length;
+    const bodyX = LEFT_SOL_W; // ダブル時は右にオフセット
+    const pEA=bodyX+30, pP=bodyX+70, pEB=bodyX+110;
+    const totalH=supH+n*SH+endH+addH+30;
+    const totalW=LEFT_SOL_W+BW+SOL_W+90;
+
+    let body=`<defs>
+      <linearGradient id="bodyGradV" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#d8e2ed"/><stop offset="50%" stop-color="#c0cedd"/><stop offset="100%" stop-color="#a8b8cc"/>
+      </linearGradient>
+      <linearGradient id="supGradV" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e3050"/><stop offset="100%" stop-color="#2d4a6a"/>
+      </linearGradient>
+    </defs>`;
+
+    body+=`<rect x="${bodyX}" y="0" width="${BW}" height="${supH}" fill="url(#supGradV)" rx="3 3 0 0"/>
+    <rect x="${bodyX}" y="0" width="${BW}" height="${supH}" fill="none" stroke="#1a2d42" stroke-width="1.2" rx="3 3 0 0"/>
+    <text x="${bodyX+BW/2}" y="${supH/2+4}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.8)" font-family="IBM Plex Mono,monospace">SUPPLY</text>
+    <circle cx="${pEA}" cy="${supH/2}" r="7" fill="#5a8aaa" opacity="0.8"/>
+    <circle cx="${pP}"  cy="${supH/2}" r="9" fill="#e84040" opacity="0.9"/>
+    <circle cx="${pEB}" cy="${supH/2}" r="7" fill="#5a8aaa" opacity="0.8"/>`;
+
+    // ラベル on supply block
+    body+=`
+    <text x="${pEA}" y="${supH-4}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.6)" font-weight="700">EA</text>
+    <text x="${pP}"  y="${supH-4}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.6)" font-weight="700">P</text>
+    <text x="${pEB}" y="${supH-4}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" fill="rgba(255,255,255,.6)" font-weight="700">EB</text>`;
+
+    body+=`<rect x="${bodyX}" y="${supH}" width="${BW}" height="${n*SH}" fill="url(#bodyGradV)" stroke="#8a9ab0" stroke-width="1"/>`;
+    body+=`
+    <line x1="${pEA}" y1="${supH}" x2="${pEA}" y2="${supH+n*SH}" stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>
+    <line x1="${pP}"  y1="${supH}" x2="${pP}"  y2="${supH+n*SH}" stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>
+    <line x1="${pEB}" y1="${supH}" x2="${pEB}" y2="${supH+n*SH}" stroke="#8a9ab0" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.4"/>`;
+
+    for(let i=0;i<n;i++){
+      const v=S.valves[i], y=supH+i*SH, cy2=y+SH/2;
+      const info=VTINFO[v.type], isBlank=v.type==='blank';
+      const isSel=S.selIdx===i;
+      if(i>0) body+=`<line x1="${bodyX}" y1="${y}" x2="${bodyX+BW}" y2="${y}" stroke="#8a9ab0" stroke-width="1.2"/>`;
+      // カラーストライプ（左端）
+      body+=`<rect x="${bodyX+2}" y="${y+2}" width="5" height="${SH-4}" fill="${v.color||info.bodyColor}" rx="1.5" opacity="0.85"/>`;
+      if(!isBlank){
+        body+=portCircle(pEA,cy2,11,true,'','');
+        body+=portCircle(pP, cy2,13,true,'','');
+        body+=portCircle(pEB,cy2,11,true,'','');
+        // 3位置バルブ: センターポジションバッジ（右端ポート横）
+        if(info.pos===3){
+          const ct=info.centerType;
+          const bgC = ct==='closed'?'#7c3aed':ct==='exhaust'?'#0891b2':'#059669';
+          const lblC = ct==='closed'?'CLS':ct==='exhaust'?'EXH':'PRS';
+          body+=`<rect x="${bodyX+BW-28}" y="${cy2-8}" width="22" height="16" fill="${bgC}" rx="3" opacity="0.12"/>`;
+          body+=`<rect x="${bodyX+BW-28}" y="${cy2-8}" width="22" height="16" fill="none" stroke="${bgC}" stroke-width="1.2" rx="3" opacity="0.6"/>`;
+          body+=`<text x="${bodyX+BW-17}" y="${cy2+3.5}" text-anchor="middle" font-size="8" font-weight="700" fill="${bgC}" font-family="IBM Plex Mono,monospace">${lblC}</text>`;
+        }
+      } else {
+        body+=portCircle(pEA,cy2,11,false,'','');
+        body+=portCircle(pP, cy2,13,false,'','');
+        body+=portCircle(pEB,cy2,11,false,'','');
+        body+=`<line x1="${bodyX+16}" y1="${y+6}" x2="${bodyX+BW-6}" y2="${y+SH-6}" stroke="#8a9ab0" stroke-width="1" opacity="0.35"/>`;
+        body+=`<line x1="${bodyX+BW-6}" y1="${y+6}" x2="${bodyX+16}" y2="${y+SH-6}" stroke="#8a9ab0" stroke-width="1" opacity="0.35"/>`;
+      }
+      // ステーションラベル（ソレノイドの右外側）
+      const stLabelX = bodyX + BW + SOL_W + 6;
+      body+=`<text x="${stLabelX}" y="${cy2+3.5}" font-size="9" font-family="IBM Plex Mono,monospace" fill="#64748b" font-weight="600">${i+1}連目</text>`;
+      const tagShort=(v.tag||'').length>8?(v.tag||'').slice(0,7)+'…':(v.tag||'');
+      if(tagShort) body+=`<text x="${bodyX+BW-32}" y="${cy2+3.5}" text-anchor="end" font-size="7.5" font-family="Noto Sans JP" fill="#2d5a8a">${tagShort}</text>`;
+      // ソレノイド：ダブル・3位置は左右両端に描画
+      if(!isBlank) body+=solenoidH(bodyX, bodyX+BW, cy2, info.sols, v.color||info.bodyColor);
+      if(isSel) body+=`<rect x="${bodyX}" y="${y}" width="${BW}" height="${SH}" fill="none" stroke="#0066cc" stroke-width="2.5" opacity="0.9"/>
+        <rect x="${bodyX}" y="${y}" width="${BW}" height="${SH}" fill="rgba(0,102,204,.06)"/>`;
+      body+=`<rect class="station-click" x="${bodyX}" y="${y}" width="${BW}" height="${SH}" fill="transparent" onclick="selStation(${i})" style="cursor:pointer"/>`;
+    }
+
+    const ey=supH+n*SH;
+    body+=`<rect x="${bodyX}" y="${ey}" width="${BW}" height="${endH}" fill="#c8d4e0" stroke="#8a9ab0" stroke-width="1" rx="0 0 3 3"/>
+    <text x="${bodyX+BW/2}" y="${ey+endH/2+4}" text-anchor="middle" font-size="8" font-family="IBM Plex Mono,monospace" fill="#8a9ab0" font-weight="600">END</text>`;
+
+    const ay=ey+endH+6;
+    body+=`<rect x="${bodyX+BW/2-40}" y="${ay}" width="80" height="${addH-6}" fill="rgba(45,122,212,.06)" stroke="#bad4f0" stroke-width="1.5" stroke-dasharray="4,3" rx="4" style="cursor:pointer" onclick="stDelta(1)"/>
+    <text x="${bodyX+BW/2}" y="${ay+addH/2+4}" text-anchor="middle" font-size="20" fill="#2d7bd4" style="cursor:pointer" onclick="stDelta(1)" pointer-events="none">＋</text>`;
+
+    body+=`
+    <text x="${pEA}" y="${ay+addH+12}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#64748b" font-weight="600">EA</text>
+    <text x="${pP}"  y="${ay+addH+12}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#64748b" font-weight="600">P</text>
+    <text x="${pEB}" y="${ay+addH+12}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono,monospace" fill="#64748b" font-weight="600">EB</text>`;
+
+    // U / D ラベル（右側）
+    const udX = bodyX+BW+SOL_W+26;
+    body+=`
+    <text x="${udX}" y="${supH+12}" font-size="9" font-family="IBM Plex Mono,monospace" fill="#94a3b8">U側 (Up側)</text>
+    <text x="${udX}" y="${supH+n*SH-4}" font-size="9" font-family="IBM Plex Mono,monospace" fill="#94a3b8">D側 (Down側)</text>
+    <line x1="${udX-4}" y1="${supH+14}" x2="${udX-4}" y2="${supH+n*SH-12}" stroke="#d0d7e2" stroke-width="0.8"/>`;
+
+    if(hasDbl) body+=`<text x="${bodyX+BW/2}" y="${ay+addH+28}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="Noto Sans JP">← ソレノイド　　　ソレノイド →</text>`;
+
+    wrap.innerHTML=`<svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="overflow:visible">${body}</svg>`;
+  }
+}
+
+/* ========== SELECTION ========== */
+/* 3ポートバルブが現在のシリーズで使用可能か判定
+   カタログ P.726-728：3ポートバルブ(SY300/SY500系)はSY3000・SY5000のみ対応
+   SY7000・SY9000では搭載不可 */
+// 3ポートバルブ(SY300/SY500)が選択可能な条件：
+//   ① マニホールドシリーズが SY3000 または SY5000
+//   ② マニホールド型式が下記の対応型式であること
+//      対応: 20,20P,20SA, 41,41P,42,42P,42SA, 45,45ANA,45S6A,45pl,45S6B
+//      非対応: 60型（カセット）, 23/23P/23SA型（SY9000専用分割形）, 43/43P/43SA型（SY9000専用ベース形）
+var ALLOW_3PORT_VARIANTS = [
+  '20','20P','20SA',           // 直接配管・一体ベース
+  '41','41P','42','42P','42SA', // ベース配管・一体ベース
+  '45','45ANA','45S6A','45pl','45S6B', // ベース配管・DINレール
+];
+
+function is3portAllowed(){
+  if(S.seriesGroup !== 'SY') return true; // VQC/JSYは制限なし
+  // ①シリーズ条件
+  if(!['SY3000','SY5000'].includes(S.maniSeries)) return false;
+  // ②型式条件
+  if(!ALLOW_3PORT_VARIANTS.includes(S.maniVarId)) return false;
+  return true;
+}
+
+// 3ポート許可されない理由を返す（トースト・ツールチップ用）
+function get3portDenyReason(){
+  if(!['SY3000','SY5000'].includes(S.maniSeries)){
+    return 'SY7000・SY9000では3ポートバルブは搭載できません（カタログP.726参照）';
+  }
+  if(!ALLOW_3PORT_VARIANTS.includes(S.maniVarId)){
+    return S.maniVarId + '型では3ポートバルブ（SY300/SY500）は搭載できません（カタログP.726参照）';
+  }
+  return '';
+}
+
+/* 3ポート選択中に非対応条件へ変更した場合、シングルへ自動リセット */
+function sanitizeValvesFor3port(){
+  if(is3portAllowed()) return false;
+  let changed = false;
+  S.valves.forEach(v=>{
+    if(v.type==='3p-n'||v.type==='3p-o'){ v.type='5p-s'; changed=true; }
+  });
+  return changed;
+}
+
+/* 3ポートカードのdisabled表示を更新 */
+function update3portCards(){
+  const allowed = is3portAllowed();
+  const reason  = allowed ? '' : get3portDenyReason();
+  document.querySelectorAll('.vtcard[data-vt="3p-n"], .vtcard[data-vt="3p-o"]').forEach(c=>{
+    c.style.opacity    = allowed ? '1'       : '0.35';
+    c.style.cursor     = allowed ? 'pointer' : 'not-allowed';
+    c.style.background = allowed ? ''        : '#f8f8f8';
+    c.title = reason;
+  });
+  // 3ポートセクションラベルにも注記
+  const lbl = document.getElementById('3portLabel');
+  if(lbl){
+    var note = '';
+    if(!allowed){
+      if(!['SY3000','SY5000'].includes(S.maniSeries)){
+        note = ' <span style="color:#e84040;font-size:8px">（SY3000/5000のみ）</span>';
+      } else {
+        note = ' <span style="color:#e84040;font-size:8px">（この型式では使用不可）</span>';
+      }
+    }
+    lbl.innerHTML = '3ポート' + note;
+  }
+}
+
+function selStation(idx){
+  S.selIdx=idx;
+  const v=S.valves[idx];
+  document.getElementById('rightPanel').classList.add('open');
+  document.getElementById('rpBadge').textContent='ST'+(idx+1)+' / '+(idx+1)+'連目';
+  document.querySelectorAll('.vtcard').forEach(c=>c.classList.toggle('active',c.dataset.vt===v.type));
+  // ブランク時は仕様セクション非表示
+  const isBlank = v.type==='blank';
+  document.getElementById('rpSpecSec').style.display = isBlank ? 'none' : '';
+  document.getElementById('rpPnBuilder').style.display = isBlank ? 'none' : '';
+  // チップ状態を全更新
+  refreshChips(v);
+  // 切換方式テキスト
+  updateSwitchDisp(v.type);
+  // 識別カラー
+  document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('active',s.dataset.c===(v.color||'')));
+  // タグ・備考
+  document.getElementById('rpTag').value=v.tag||'';
+  document.getElementById('rpNote').value=v.note||'';
+  update3portCards();
+  renderPnBuilder();
+  renderManifold();
+}
+// 全チップボタンのアクティブ状態をvalveオブジェクトに合わせる
+function refreshChips(v){
+  document.querySelectorAll('.rp-chip').forEach(function(btn){
+    const key = btn.dataset.key;
+    const val = btn.dataset.val;
+    if(key && val !== undefined){
+      btn.classList.toggle('active', (v[key]||'') === val);
+    }
+  });
+}
+// ②切換方式の表示更新
+function updateSwitchDisp(type){
+  const info = VTINFO[type];
+  const el = document.getElementById('rpSwitchDisp');
+  if(!el) return;
+  if(!info){ el.textContent='—'; return; }
+  el.textContent = info.label;
+}
+function closeRP(){ S.selIdx=null; document.getElementById('rightPanel').classList.remove('open'); renderManifold(); }
+function setVtype(el){
+  if(S.selIdx===null) return;
+  const vt = el.dataset.vt;
+  if((vt==='3p-n'||vt==='3p-o') && !is3portAllowed()){
+    el.style.animation='shake .3s';
+    setTimeout(()=>el.style.animation='',350);
+    showToast(get3portDenyReason(), '#b84a00');
+    return;
+  }
+  S.valves[S.selIdx].type=vt;
+  document.querySelectorAll('.vtcard').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('rpSpecSec').style.display=vt==='blank'?'none':'';
+  updateSwitchDisp(vt);
+  renderManifold(); buildModel(); renderPnBuilder();
+}
+function setVprop(k,v){ if(S.selIdx===null)return; S.valves[S.selIdx][k]=v; if(k==='tag')renderManifold(); }
+
+/* ===================================================================
+   品番ビルダー描画
+   型式:  SY[size][switch][pipingCode][coil]-[volt][lead][surge][manual]-[portSize][thread]-[bracket]-[custom]-[ceukca]
+   ベース配管形はブラケット欄なし
+   必須フィールド = オレンジ破線（未選択）
+   任意フィールドの無記号 = 青枠＋「―」
+   =================================================================== */
+function renderPnBuilder(){
+  var el = document.getElementById('rpPnRow');
+  if(!el) return;
+  if(S.selIdx===null){ el.innerHTML=''; return; }
+  var v = S.valves[S.selIdx];
+  if(v.type==='blank'){ el.innerHTML='<span style="color:#94a3b8;font-size:10px">ブランクプレート</span>'; return; }
+
+  // 配管形式コード（マニホールドのpipingTypeから決定）
+  var pipCode = (S.seriesGroup==='SY' && S.pipingType==='base') ? '40' : '20';
+  var isDirect = (pipCode === '20');
+
+  // 切換方式コード
+  var switchMap = {'5p-s':'1','5p-d':'2','5p-3c':'3','5p-3e':'4','5p-3p':'5','3p-n':'1','3p-o':'1'};
+  var switchCode = switchMap[v.type] || '';
+
+  // 各フィールド定義: [label, value, required, width_em]
+  // required=true → 未選択時はオレンジ破線ボックス
+  // required=false → 未選択時は青枠＋「―」（無記号）
+  var fields = [
+    {lbl:'SY', val:'SY',       req:true,  fixed:true,  w:2.2},   // 固定テキスト
+    {lbl:'①', val:v.series ? v.series.replace('SY','').charAt(0) : '', req:true,  fixed:false, w:1.4},
+    {lbl:'②', val:switchCode, req:true,  fixed:false, w:1.4},
+    {lbl:'配管', val:pipCode,   req:true,  fixed:true,  w:2.2},   // マニホールド設定から
+    {lbl:'③', val:v.coil||'', req:false, fixed:false, w:1.4, maxw:1.6},
+    {lbl:'-',  val:'-',        req:true,  fixed:true,  w:0.8},
+    {lbl:'④', val:v.voltage||'', req:true,  fixed:false, w:1.4},
+    {lbl:'⑤', val:v.lead||'', req:true,  fixed:false, w:2.2, maxw:2.8},
+    {lbl:'⑥', val:v.surge||'', req:false, fixed:false, w:1.4},
+    {lbl:'⑦', val:v.manual||'',req:false, fixed:false, w:1.4},
+    {lbl:'-',  val:'-',        req:true,  fixed:true,  w:0.8},
+    {lbl:'⑧', val:v.portSize||'', req:true, fixed:false, w:2.2, maxw:2.8},
+    {lbl:'⑨', val:v.thread||'',req:false, fixed:false, w:1.4},
+  ];
+
+  // ブラケット：直接配管形かつ2位置シングルのみ
+  if(isDirect && v.type==='5p-s'){
+    fields.push({lbl:'-',  val:'-',        req:true,  fixed:true,  w:0.8});
+    fields.push({lbl:'⑩', val:v.bracket||'', req:false, fixed:false, w:2.0});
+  }
+  fields.push({lbl:'-',  val:'-',        req:true,  fixed:true,  w:0.8});
+  fields.push({lbl:'⑪', val:v.custom||'', req:false, fixed:false, w:2.0, maxw:3.0});
+  fields.push({lbl:'-',  val:'-',        req:true,  fixed:true,  w:0.8});
+  fields.push({lbl:'⑫', val:v.ceukca||'', req:false, fixed:false, w:1.4});
+
+  var html = '';
+  for(var i=0; i<fields.length; i++){
+    var f = fields[i];
+    if(f.fixed){
+      // 固定テキスト（SY、-、配管コード）
+      var isPrefix = (f.val==='SY');
+      html += '<span style="font-weight:700;color:'+(isPrefix?'#1a2232':'#64748b')+';'
+            + (isPrefix?'font-size:12px;':'font-size:10px;')+'padding:0 1px">' + f.val + '</span>';
+    } else {
+      var isEmpty  = (f.val === '');
+      var isBlank  = (!isEmpty);  // 値があれば確定済み
+      var boxW     = (f.maxw||f.w) + 'em';
+      var minW     = f.w + 'em';
+
+      if(isEmpty && f.req){
+        // 必須・未選択 → オレンジ破線
+        html += '<span title="'+f.lbl+'" style="'
+              + 'display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:'+minW+';max-width:'+boxW+';height:18px;'
+              + 'border:1.5px dashed #f97316;border-radius:2px;background:#fff8f1;'
+              + 'font-size:10px;color:#f97316;vertical-align:middle">'
+              + f.lbl+'</span>';
+      } else if(isEmpty && !f.req){
+        // 任意・無記号選択済 → 青枠＋「―」
+        html += '<span title="'+f.lbl+'：無記号" style="'
+              + 'display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:'+minW+';max-width:'+boxW+';height:18px;'
+              + 'border:1.5px solid #93c5fd;border-radius:2px;background:#f0f9ff;'
+              + 'font-size:10px;color:#3b82f6;vertical-align:middle">―</span>';
+      } else {
+        // 値確定済 → 青塗りボックス
+        html += '<span title="'+f.lbl+'：'+f.val+'" style="'
+              + 'display:inline-flex;align-items:center;justify-content:center;'
+              + 'min-width:'+minW+';max-width:'+boxW+';height:18px;'
+              + 'border:1.5px solid #2d7bd4;border-radius:2px;background:#ebf3ff;'
+              + 'font-size:10px;font-weight:700;color:#0044aa;vertical-align:middle;padding:0 2px">'
+              + f.val + '</span>';
+      }
+    }
+  }
+  el.innerHTML = html;
+}
+function setChip(el){
+  if(S.selIdx===null) return;
+  const key = el.dataset.key;
+  const val = el.dataset.val;
+  S.valves[S.selIdx][key] = val;
+  // 同じkeyのチップを全部非アクティブ→選択をアクティブ
+  document.querySelectorAll('.rp-chip[data-key="'+key+'"]').forEach(function(b){
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+  // リード線種別が変わったらサージ注記を更新
+  if(key === 'lead'){
+    var isDY = ['D','DO','Y','YO'].indexOf(val) >= 0;
+    var note = document.getElementById('rpSurgeNote');
+    if(note) note.textContent = isDY ? 'D/Y系の場合（無極性タイプ）' : 'G/H/L/M/W系の場合';
+  }
+  buildModel();
+  renderPnBuilder();
+}
+function setSwatch(el,c){ if(S.selIdx===null)return; S.valves[S.selIdx].color=c; document.querySelectorAll('.sw').forEach(s=>s.classList.remove('active')); el.classList.add('active'); renderManifold(); }
+function removeSelected(){ if(S.selIdx===null||S.valves.length<=1)return; S.valves.splice(S.selIdx,1); S.selIdx=null; document.getElementById('rightPanel').classList.remove('open'); document.getElementById('stNum').textContent=S.valves.length; renderManifold(); buildModel(); }
+function resetAll(){ if(!confirm('リセットしますか？'))return; initValves(6); S.selIdx=null; document.getElementById('rightPanel').classList.remove('open'); document.getElementById('stNum').textContent=6; renderManifold(); buildModel(); }
+
+/* ========== MODEL NUMBER ========== */
+function buildModel(){
+  const v=getVariant(), sg=S.seriesGroup, volt=document.getElementById('cfgV').value;
+  const st=S.valves.length;
+  const hasD=S.valves.some(x=>['5p-d','5p-3c','5p-3e','5p-3p'].includes(x.type));
+  const voltCode = volt==='DC24V'?'24DC':volt==='DC12V'?'12DC':volt==='AC100V'?'100AC':'200AC';
+  let m='', hint='';
+  if(sg==='SY'){
+    const mvi=getManiVarInfo();
+    const actCode = hasD?'20':'10'; // 1x=シングル, 2x=ダブル
+    const maniCode = mvi ? mvi.code : '20';
+    const pipStr   = S.pipingType==='direct'?'直接配管形':'ベース配管形';
+    const baseStr  = mvi ? mvi.label : '';
+    m=`SY${v.code}□${actCode}-${voltCode}-M${st} [${maniCode}型]`;
+    hint=`${v.label} / ${pipStr} / ${baseStr} / ${v.port} / ${st}ST`;
+  } else if(sg==='VQC'){
+    m=`VQC${v.code}000-M${st}-${voltCode}`;
+    hint=`${v.label} / ${v.port} / ${st}ST / ${volt}`;
+  } else {
+    m=`JSY${v.code}00-M${st}-${voltCode}`;
+    hint=`${v.label} / ${v.port} / ${st}ST / ${volt}`;
+  }
+  document.getElementById('modelPrev').textContent=m;
+  document.getElementById('modelHint').textContent=hint;
+}
+function updateAll(){ renderManifold(); buildModel(); renderVarGrid(); renderSySection(); }
+
+/* ========== SPEC SHEET ========== */
+function showSpec(){
+  const v=getVariant();
+  const pj=document.getElementById('cfgPJ').value||'（未記入）';
+  const dn=document.getElementById('cfgDN').value||'MEC-'+Date.now().toString().slice(-5);
+  const au=document.getElementById('cfgAU').value||'—';
+  const dt=new Date().toISOString().slice(0,10);
+  const volt=document.getElementById('cfgV').value;
+  const wir=document.getElementById('cfgW').value;
+  const pr=document.getElementById('cfgPr').value;
+  const ip=document.getElementById('cfgIP').value;
+  const mt=document.getElementById('cfgMt').value;
+  const mdl=document.getElementById('modelPrev').textContent;
+  const st=S.valves.length;
+  const mvi=getManiVarInfo();
+
+  const stRows=S.valves.map((vl,i)=>{
+    const inf=VTINFO[vl.type];
+    const bxColor = {'5p-s':'#2563eb','5p-d':'#1e3a8a','5p-3c':'#7c3aed','5p-3e':'#0891b2','5p-3p':'#059669','3p-n':'#b45309','3p-o':'#9f1239','blank':'#94a3b8'};
+    const bc = bxColor[vl.type]||'#94a3b8';
+    const bx=`<span class="bx" style="background:${bc}20;color:${bc}">${inf.short}</span>`;
+    const cv=vl.color?`<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${vl.color};vertical-align:middle"></span></td>`:'<td></td>';
+    return `<tr>
+      <td style="font-family:'IBM Plex Mono',monospace;font-weight:700;text-align:center">${i+1}</td>
+      <td>${bx} ${inf.label}</td>
+      <td style="font-size:9px">${vl.voltage||volt}</td>
+      <td>${vl.tag||'—'}</td>
+      <td style="font-size:9px">${vl.act||'—'}</td>
+      <td style="font-size:9px">${vl.portA||'—'} / ${vl.portB||'—'}</td>
+      ${cv}
+      <td style="font-size:9px">${vl.note||''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('specContent').innerHTML=`<div class="ss">
+    <div class="ss-hd">
+      <div><div class="ss-logo">SMC</div><div style="font-size:10px;color:#888;margin-top:2px">PNEUMATICS</div></div>
+      <div class="ss-meta"><div class="ss-docno">${dn}</div><div>作成日：${dt}</div><div>作成者：${au}</div><div>Rev：A</div></div>
+    </div>
+    <div class="ss-titlebar">
+      <div style="font-size:9px;opacity:.5;letter-spacing:.15em;font-family:'IBM Plex Mono',monospace;margin-bottom:4px">MANIFOLD SPECIFICATION SHEET</div>
+      <div style="font-size:17px;font-weight:700;">${pj}</div>
+      <div style="font-size:11px;opacity:.75;margin-top:2px">マニホールド仕様書</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5ab4ff;margin-top:8px;font-weight:600">型番（参考）：${mdl}</div>
+    </div>
+    <div class="ss-2col">
+      <div class="ss-tbl-wrap"><div class="ss-sec-hd">基本仕様</div>
+        <table class="ss-tbl">
+          <tr><td>シリーズ</td><td>${v.label}</td></tr>
+          ${mvi?`<tr><td>配管方式</td><td>${S.pipingType==='direct'?'直接配管形':'ベース配管形'}</td></tr>`:''}
+          ${mvi?`<tr><td>マニホールドバリエーション</td><td>${mvi.label}（${mvi.base}${mvi.subtype?' / '+mvi.subtype:''}）</td></tr>`:''}
+          <tr><td>ポートサイズ</td><td>${v.port}</td></tr>
+          <tr><td>弁ピッチ</td><td>${v.pitch}</td></tr>
+          <tr><td>最大流量</td><td>${v.flow}（Cv=${v.cv}）</td></tr>
+          <tr><td>ステーション数</td><td>${st} st</td></tr>
+          <tr><td>使用圧力</td><td>${pr}</td></tr>
+        </table>
+      </div>
+      <div class="ss-tbl-wrap"><div class="ss-sec-hd">電気 / 取付仕様</div>
+        <table class="ss-tbl">
+          <tr><td>電源電圧</td><td>${volt}</td></tr>
+          <tr><td>配線方式</td><td>${wir}</td></tr>
+          <tr><td>保護等級</td><td>${ip}</td></tr>
+          <tr><td>取付方式</td><td>${mt}</td></tr>
+          <tr><td>使用流体</td><td>圧縮空気（ノンルブ）</td></tr>
+          <tr><td>ボディ材質</td><td>アルミニウム合金</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="ss-tbl-wrap" style="margin-bottom:14px"><div class="ss-sec-hd">ステーション構成表</div>
+      <table class="ss-st-tbl">
+        <thead><tr>
+          <th style="width:40px">連目</th><th>バルブ種別</th><th style="width:65px">電圧</th>
+          <th style="width:120px">タグ / 用途</th><th>接続アクチュエーター</th>
+          <th>A/Bポート接続先</th><th style="width:20px">色</th><th>備考</th>
+        </tr></thead>
+        <tbody>${stRows}</tbody>
+      </table>
+    </div>
+    <div class="ss-sign">
+      <div><div style="font-size:10px;font-weight:700;color:#2d4a6a;margin-bottom:6px">承認欄</div>
+        <table style="border-collapse:collapse">
+          <tr>
+            <td class="sign-cell"><div class="sign-cell-lbl">設　計</div><div class="sign-cell-sp"></div></td>
+            <td class="sign-cell"><div class="sign-cell-lbl">確　認</div><div class="sign-cell-sp"></div></td>
+            <td class="sign-cell"><div class="sign-cell-lbl">承　認</div><div class="sign-cell-sp"></div></td>
+          </tr>
+        </table>
+      </div>
+      <div style="margin-left:auto;text-align:right;font-size:10px;color:#888;line-height:2">
+        <div>文書番号：${dn}</div><div>作成日：${dt}</div><div>ページ：1 / 1</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:#aaa;margin-top:14px;text-align:center">※本仕様書はSMC製品カタログを参考に作成した参考資料です。最終確認はSMC公式資料をご参照ください。</div>
+  </div>`;
+  document.getElementById('specOverlay').classList.add('show');
+}
+
+/* ========== SERIES TABS ========== */
+document.querySelectorAll('.series-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.series-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); setSeriesGroup(t.dataset.sg);
+  });
+});
+
+/* ========== INIT ========== */
+// マニホールドシリーズチップの初期アクティブ状態をS.maniSeriesに合わせる
+document.querySelectorAll('.mani-series-chip').forEach(function(b){
+  b.classList.toggle('active', b.dataset.ms === S.maniSeries);
+});
+initValves(6); renderVarGrid(); renderSySection(); renderManiPortChips(); renderManiPnBuilder(); renderManifold(); buildModel(); update3portCards();
+</script>
+</body>
+</html>
